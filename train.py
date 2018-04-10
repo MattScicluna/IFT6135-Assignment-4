@@ -11,7 +11,7 @@ import torch
 import numpy as np
 
 # from project
-from model import Generator
+from model import Generator, Discriminator
 
 SEED = 1024
 
@@ -35,6 +35,7 @@ def main(train_set, learning_rate, n_epochs, batch_size, num_workers, hidden_siz
     # initialize model
     if model_file == None:
         gen = Generator(hidden_dim=hidden_size)
+        disc = Discriminator()
 
     np.random.seed(SEED)  # reset training seed to ensure that batches remain the same between runs!
     for batch, _ in train_dataloader:
@@ -43,6 +44,12 @@ def main(train_set, learning_rate, n_epochs, batch_size, num_workers, hidden_siz
         #see_image(batch[0])
         if cuda:
             batch = batch.cuda()
+
+        # training regime
+        z = Variable(torch.zeros(32, 100))
+        gen = Generator(hidden_dim=100)
+        x = gen.forward(z.view(-1, 100, 1, 1))
+        disc.forward(x)
 
 
 if __name__ == '__main__':
