@@ -2,9 +2,10 @@ import os
 import matplotlib.pyplot as plt
 from scipy.misc import imresize
 
+
 # root path depends on your computer
-root = 'data/celebA/'
-save_root = 'data/resized_celebA/'
+root = '../data/img_align_celeba/'
+save_root = '../data/resized_celebA/'
 resize_size = 64
 
 if not os.path.isdir(save_root):
