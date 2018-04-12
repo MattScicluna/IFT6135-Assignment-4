@@ -15,6 +15,7 @@ def save_image_sample(batch, save_num, cuda, total_examples):
         else:
             plt.imshow(transforms.ToPILImage()(batch[k]))
 
+        plt.axis('off')
         plt.savefig('results/generated_images/{}/sample-{}'.format(total_examples, ix))
 
 

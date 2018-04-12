@@ -48,7 +48,7 @@ class Generator(nn.Module):
     def weight_init(self, mean=0, std=0.02):
         for param in self._modules['network']:
             if isinstance(param, nn.ConvTranspose2d):
-                nn.init.normal(param.weight, mean, std)
+                nn.init.normal(param.weight, mean=mean, std=std)
 
 
 class Discriminator(nn.Module):
@@ -87,5 +87,5 @@ class Discriminator(nn.Module):
 
     def weight_init(self, mean=0, std=0.02):
         for param in self._modules['network']:
-            if isinstance(param, nn.ConvTranspose2d):
-                nn.init.normal(param.weight, mean, std)
+            if isinstance(param, nn.Conv2d):
+                nn.init.normal(param.weight, mean=mean, std=std)
