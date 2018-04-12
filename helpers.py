@@ -2,17 +2,20 @@ import matplotlib.pyplot as plt
 import torch
 from torchvision import transforms
 import numpy as np
+import os
 
 
 def save_image_sample(batch, save_num, cuda, total_examples):
+    if not os.path.isdir('results/generated_images/{}'.format(total_examples)):
+        os.mkdir('results/generated_images/{}'.format(total_examples))
     to_save = np.random.randint(batch.shape[0], size=save_num)
     for ix, k in enumerate(to_save):
         if cuda:
             plt.imshow(transforms.ToPILImage()(batch[k].data.cpu()))
-            plt.savefig('results/generated_images/example-{}-sample-{}'.format(total_examples, ix))
         else:
             plt.imshow(transforms.ToPILImage()(batch[k]))
-            plt.savefig('results/generated_images/example-{}-sample-{}'.format(total_examples, ix))
+
+        plt.savefig('results/generated_images/{}/sample-{}'.format(total_examples, ix))
 
 
 def save_checkpoint(total_examples, disc, gen, gen_losses, disc_losses):

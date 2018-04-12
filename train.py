@@ -111,6 +111,9 @@ def main(train_set, learning_rate, n_epochs, beta_0, beta_1, batch_size, num_wor
             disc_optimizer.step()
             disc_losses_epoch.append(disc_train_loss.data[0])
 
+            disc_fake_accuracy = 1 - fake_disc_result.mean().data[0]
+            disc_true_accuracy = true_disc_result.mean().data[0]
+
             #  Sample minibatch of m noise samples from noise prior p_g(z) and transform
             if cuda:
                 z = Variable(torch.zeros(batch_size, hidden_size).cuda())
@@ -127,9 +130,12 @@ def main(train_set, learning_rate, n_epochs, beta_0, beta_1, batch_size, num_wor
             gen_train_loss.backward()
             gen_optimizer.step()
             gen_losses_epoch.append(gen_train_loss.data[0])
-            if (idx+1) % display_result_every == 0:
-                print('epoch {}: step {}/{} disc loss: {:.4f}, gen loss: {:.4f}'
-                      .format(epoch+1, idx+1, len(train_dataloader), disc_train_loss.data[0], gen_train_loss.data[0]))
+
+            if (display_result_every != 0) and (total_examples % display_result_every == 0):
+                print('epoch {}: step {}/{} disc true acc: {:.4f} disc fake acc: {:.4f} '
+                      'disc loss: {:.4f}, gen loss: {:.4f}'
+                      .format(epoch+1, idx+1, len(train_dataloader), disc_true_accuracy, disc_fake_accuracy,
+                              disc_train_loss.data[0], gen_train_loss.data[0]))
 
             # Checkpoint model
             total_examples += batch_size
