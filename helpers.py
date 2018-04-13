@@ -22,6 +22,7 @@ def save_image_sample(batch, cuda, total_examples):
                 indx += 1
             else:
                 axarr[i, j].imshow(invTrans(batch[indx]))
+                indx += 1
 
             # Turn off tick labels
             axarr[i, j].axis('off')
