@@ -49,6 +49,8 @@ class Generator(nn.Module):
         for param in self._modules['network']:
             if isinstance(param, nn.ConvTranspose2d):
                 nn.init.normal(param.weight, mean=mean, std=std)
+                nn.init.constant(param.bias, 0.0)
+                #nn.init.uniform(param.bias, 0, 0)
 
 
 class Discriminator(nn.Module):
@@ -89,3 +91,4 @@ class Discriminator(nn.Module):
         for param in self._modules['network']:
             if isinstance(param, nn.Conv2d):
                 nn.init.normal(param.weight, mean=mean, std=std)
+                nn.init.constant(param.bias, 0.0)
