@@ -27,7 +27,7 @@ def main(train_set, learning_rate, n_epochs, beta_0, beta_1, batch_size, num_wor
                                          transform=data_transform)
 
     train_dataloader = DataLoader(train_dataset, batch_size=batch_size,
-                                  shuffle=True, num_workers=num_workers,
+                                  shuffle=False, num_workers=num_workers,
                                   drop_last=True)
 
     # initialize model
@@ -89,7 +89,6 @@ def main(train_set, learning_rate, n_epochs, beta_0, beta_1, batch_size, num_wor
             disc_losses_epoch = []
             gen_losses_epoch = []
             for idx, (true_batch, _) in enumerate(train_dataloader):
-
                 disc.zero_grad()
 
                 #  Sample  minibatch  of examples from data generating distribution
