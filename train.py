@@ -98,7 +98,7 @@ def main(train_set, learning_rate, n_epochs, beta_0, beta_1, batch_size, num_wor
                     true_target = Variable(true_target.cuda())
                 else:
                     true_batch = Variable(true_batch)
-                    true_target = Variable(true_target.cuda())
+                    true_target = Variable(true_target)
 
                 #  train discriminator on true data
                 true_disc_result = disc.forward(true_batch)
