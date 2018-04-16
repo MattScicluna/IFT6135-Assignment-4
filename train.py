@@ -219,7 +219,7 @@ if __name__ == '__main__':
     argparser.add_argument('--num_workers', type=int, default=8)
     argparser.add_argument('--hidden_size', type=int, default=100)
     argparser.add_argument('--model_file', type=str, default=None)
-    argparser.add_argument('--cuda', action='store_true', default=True)
+    argparser.add_argument('--cuda', action='store_true', default=False)
     argparser.add_argument('--display_result_every', type=int, default=640)   # 640
     argparser.add_argument('--checkpoint_interval', type=int, default=32000)  # 32000
     argparser.add_argument('--seed', type=int, default=1024)
