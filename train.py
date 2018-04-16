@@ -229,8 +229,18 @@ if __name__ == '__main__':
 
     args.cuda = args.cuda and torch.cuda.is_available()
 
-    main(train_set=args.train_set, learning_rate=args.learning_rate, n_epochs=args.n_epochs,
-         beta_0=args.beta_0, beta_1=args.beta_1, batch_size=args.batch_size, num_workers=args.num_workers,
-         hidden_size=args.hidden_size, model_file=args.model_file, cuda=args.cuda,
-         display_result_every=args.display_result_every, checkpoint_interval=args.checkpoint_interval, seed=args.seed,
-         label_smoothing=args.label_smoothing, grad_clip=args.grad_clip)
+    main(train_set=args.train_set,
+         learning_rate=args.learning_rate,
+         n_epochs=args.n_epochs,
+         beta_0=args.beta_0,
+         beta_1=args.beta_1,
+         batch_size=args.batch_size,
+         num_workers=args.num_workers,
+         hidden_size=args.hidden_size, 
+         model_file=args.model_file,
+         cuda=args.cuda,
+         display_result_every=args.display_result_every,
+         checkpoint_interval=args.checkpoint_interval,
+         seed=args.seed,
+         label_smoothing=args.label_smoothing,
+         grad_clip=args.grad_clip)
