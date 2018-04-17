@@ -12,7 +12,7 @@ import torch.optim as optim
 import numpy as np
 
 # from project
-from helpers import load_model, Generator, Discriminator, save_checkpoint, save_image_sample, save_learning_curve
+from helpers import load_model, Generator, Discriminator, save_checkpoint, save_image_sample, save_learning_curve, save_learning_curve_epoch
 
 
 def main(train_set, learning_rate, n_epochs, beta_0, beta_1,
@@ -51,7 +51,7 @@ def main(train_set, learning_rate, n_epochs, beta_0, beta_1,
         elif upsampling == 'bilinear':
             from models.model_bilinear import Generator, Discriminator
 
-        gen = Generator(hidden_dim=hidden_size)
+        gen = Generator(hidden_dim=hidden_size, leaky=0.2)
         disc = Discriminator(leaky=0.2)
 
         gen.weight_init(mean=0, std=0.02)
@@ -60,6 +60,8 @@ def main(train_set, learning_rate, n_epochs, beta_0, beta_1,
         total_examples = 0
         disc_losses = []
         gen_losses = []
+        disc_loss_per_epoch = []
+        gen_loss_per_epoch = []
 
         #  Sample minibatch of m noise samples from noise prior p_g(z) and transform
         if cuda:
@@ -192,6 +194,13 @@ def main(train_set, learning_rate, n_epochs, beta_0, beta_1,
                     save_learning_curve(gen_losses=gen_losses, disc_losses=disc_losses, total_examples=total_examples)
                     print("Saved learning curves!")
 
+            disc_loss_per_epoch.append(np.average(disc_losses_epoch))
+            gen_loss_per_epoch.append(np.average(gen_losses_epoch))
+
+            # Save epoch learning curve
+            save_learning_curve_epoch(gen_losses=gen_loss_per_epoch, disc_losses=disc_loss_per_epoch,
+                                      total_epochs=epoch+1)
+            print("Saved learning curves!")
 
             print('epoch {}/{} disc loss: {:.4f}, gen loss: {:.4f}'
                   .format(epoch+1, n_epochs, np.array(disc_losses_epoch).mean(), np.array(gen_losses_epoch).mean()))
