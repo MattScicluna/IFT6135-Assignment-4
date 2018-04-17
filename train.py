@@ -34,8 +34,8 @@ def main(train_set, learning_rate, n_epochs, beta_0, beta_1,
     # initialize model
     if model_file:
         try:
-            total_examples, fixed_noise, gen_losses, disc_losses, gen, disc = \
-                load_model(model_file, hidden_size)  # TODO: upsampling method?
+            total_examples, fixed_noise, gen_losses, disc_losses, gen_loss_per_epoch, \
+            disc_loss_per_epoch, gen, disc = load_model(model_file, hidden_size)  # TODO: upsampling method?
             print('model loaded successfully!')
 
         except:
@@ -182,7 +182,9 @@ def main(train_set, learning_rate, n_epochs, beta_0, beta_1,
                     disc_losses.extend(disc_losses_epoch)
                     gen_losses.extend(gen_losses_epoch)
                     save_checkpoint(total_examples=total_examples, fixed_noise=fixed_noise, disc=disc, gen=gen,
-                                    gen_losses=gen_losses, disc_losses=disc_losses)
+                                    gen_losses=gen_losses, disc_losses=disc_losses,
+                                    disc_loss_per_epoch=disc_loss_per_epoch,
+                                    gen_loss_per_epoch=gen_loss_per_epoch)
                     print("Checkpoint saved!")
 
                     #  sample images for inspection

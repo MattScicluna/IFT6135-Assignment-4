@@ -1,10 +1,11 @@
 import matplotlib
+
 matplotlib.use('Agg')
 from matplotlib import pyplot as plt
 import torch
 from torchvision import transforms
 import numpy as np
-from models.model import Generator, Discriminator # TODO: other upsampling methods?
+from models.model import Generator, Discriminator  # TODO: other upsampling methods?
 
 
 def save_image_sample(batch, cuda, total_examples):
@@ -33,17 +34,20 @@ def save_image_sample(batch, cuda, total_examples):
     f.savefig('results/generated_images/gen_images_after_{}_examples'.format(total_examples))
 
 
-def save_checkpoint(total_examples, disc, gen, gen_losses, disc_losses, fixed_noise):
+def save_checkpoint(total_examples, disc, gen, gen_losses, disc_losses,
+                    disc_loss_per_epoch, gen_loss_per_epoch, fixed_noise):
     basename = "models/example-{}".format(total_examples)
     model_fname = basename + ".model"
     state = {
-                'total_examples': total_examples,
-                'gen_state_dict': gen.state_dict(),
-                'disc_state_dict': disc.state_dict(),
-                'gen_losses': gen_losses,
-                'disc_losses': disc_losses,
-                'fixed_noise': fixed_noise
-            }
+        'total_examples': total_examples,
+        'gen_state_dict': gen.state_dict(),
+        'disc_state_dict': disc.state_dict(),
+        'gen_losses': gen_losses,
+        'disc_losses': disc_losses,
+        'disc_loss_per_epoch': disc_loss_per_epoch,
+        'gen_loss_per_epoch': gen_loss_per_epoch,
+        'fixed_noise': fixed_noise
+    }
     torch.save(state, model_fname)
 
 
@@ -62,6 +66,8 @@ def load_model(model_file, hidden_size):
     total_examples = from_before['total_examples']
     gen_losses = from_before['gen_losses']
     disc_losses = from_before['disc_losses']
+    gen_loss_per_epoch = from_before['gen_loss_per_epoch']
+    disc_loss_per_epoch = from_before['disc_loss_per_epoch']
     gen_state_dict = from_before['gen_state_dict']
     disc_state_dict = from_before['disc_state_dict']
     fixed_noise = from_before['fixed_noise']
@@ -71,7 +77,8 @@ def load_model(model_file, hidden_size):
     disc = Discriminator(leaky=0.2)
     disc.load_state_dict(disc_state_dict)
     gen.load_state_dict(gen_state_dict)
-    return total_examples, fixed_noise, gen_losses, disc_losses, gen, disc
+    return total_examples, fixed_noise, gen_losses, disc_losses, \
+           gen_loss_per_epoch, disc_loss_per_epoch, gen, disc
 
 
 def save_learning_curve(gen_losses, disc_losses, total_examples):
@@ -94,20 +101,3 @@ def save_learning_curve_epoch(gen_losses, disc_losses, total_epochs):
     plt.ylabel('Loss')
     plt.legend(loc='upper right')
     plt.savefig('results/training_summaries/learn_curves_after_{}_epochs'.format(total_epochs))
-
-
-class AverageMeter(object):
-    def __init__(self):
-        self.reset()
-
-    def reset(self):
-        self.val = 0.
-        self.avg = 0.
-        self.sum = 0.
-        self.count = 0
-
-    def update(self, val, n=1):
-        self.val = val
-        self.sum += val * n
-        self.count += n
-        self.avg = self.sum / self.count
