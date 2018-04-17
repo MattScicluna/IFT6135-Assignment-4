@@ -18,32 +18,32 @@ class Generator(nn.Module):
         • Use LeakyReLU activation in the discriminator for all layers.
     '''
 
-    def __init__(self, hidden_dim):
+    def __init__(self, hidden_dim,  leaky=0.2):
         super(Generator, self).__init__()
         self.network = nn.Sequential(
             nn.Upsample(scale_factor=4, mode='bilinear'),
             nn.Conv2d(in_channels=hidden_dim, out_channels=1024,
                       kernel_size=3, padding=1),
             nn.BatchNorm2d(1024),
-            nn.ReLU(),
+            nn.LeakyReLU(negative_slope=leaky),
 
             nn.Upsample(scale_factor=2, mode='bilinear'),
             nn.Conv2d(in_channels=1024, out_channels=512,
                       kernel_size=3, padding=1),
             nn.BatchNorm2d(512),
-            nn.ReLU(),
+            nn.LeakyReLU(negative_slope=leaky),
 
             nn.Upsample(scale_factor=2, mode='bilinear'),
             nn.Conv2d(in_channels=512, out_channels=256,
                       kernel_size=3, padding=1),
             nn.BatchNorm2d(256),
-            nn.ReLU(),
+            nn.LeakyReLU(negative_slope=leaky),
 
             nn.Upsample(scale_factor=2, mode='bilinear'),
             nn.Conv2d(in_channels=256, out_channels=128,
                       kernel_size=3, padding=1),
             nn.BatchNorm2d(128),
-            nn.ReLU(),
+            nn.LeakyReLU(negative_slope=leaky),
 
             nn.Upsample(scale_factor=2, mode='bilinear'),
             nn.Conv2d(in_channels=128, out_channels=3,
