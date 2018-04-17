@@ -1,4 +1,6 @@
-import matplotlib.pyplot as plt
+import matplotlib
+matplotlib.use('Agg')
+from matplotlib import pyplot as plt
 import torch
 from torchvision import transforms
 import numpy as np
@@ -75,9 +77,37 @@ def load_model(model_file, hidden_size):
 def save_learning_curve(gen_losses, disc_losses, total_examples):
     plt.figure()
     plt.title('GAN Learning Curves')
-    plt.plot(gen_losses, color='red', label='Generator Loss')
-    plt.plot(disc_losses, color='blue', label='Discriminator Loss')
+    plt.plot(gen_losses, color='red', label='Generator')
+    plt.plot(disc_losses, color='blue', label='Discriminator')
     plt.xlabel('Steps')
     plt.ylabel('Loss')
     plt.legend(loc='upper right')
     plt.savefig('results/training_summaries/learn_curves_after_{}_examples'.format(total_examples))
+
+
+def save_learning_curve_epoch(gen_losses, disc_losses, total_epochs):
+    plt.figure()
+    plt.title('GAN Learning Curves')
+    plt.plot(gen_losses, color='red', label='Generator')
+    plt.plot(disc_losses, color='blue', label='Discriminator')
+    plt.xlabel('Epoch')
+    plt.ylabel('Loss')
+    plt.legend(loc='upper right')
+    plt.savefig('results/training_summaries/learn_curves_after_{}_epochs'.format(total_epochs))
+
+
+class AverageMeter(object):
+    def __init__(self):
+        self.reset()
+
+    def reset(self):
+        self.val = 0.
+        self.avg = 0.
+        self.sum = 0.
+        self.count = 0
+
+    def update(self, val, n=1):
+        self.val = val
+        self.sum += val * n
+        self.count += n
+        self.avg = self.sum / self.count
