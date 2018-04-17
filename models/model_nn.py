@@ -46,7 +46,7 @@ class Generator(nn.Module):
             nn.ReLU(),
 
             nn.Upsample(scale_factor=2, mode='nearest'),
-            nn.Conv2d(in_channels=128, out_channels=64,
+            nn.Conv2d(in_channels=128, out_channels=3,
                       kernel_size=3, padding=1),
             nn.Tanh(),
         )
