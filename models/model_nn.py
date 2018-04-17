@@ -63,6 +63,7 @@ class Generator(nn.Module):
                 #nn.init.uniform(param.bias, 0, 0)
 
 
+
 class Discriminator(nn.Module):
 
     def __init__(self, leaky=0.2):
