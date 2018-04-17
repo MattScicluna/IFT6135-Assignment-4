@@ -15,8 +15,10 @@ import numpy as np
 from helpers import load_model, Generator, Discriminator, save_checkpoint, save_image_sample, save_learning_curve
 
 
-def main(train_set, learning_rate, n_epochs, beta_0, beta_1, batch_size, num_workers, hidden_size,
-         model_file, cuda, display_result_every, checkpoint_interval, seed, label_smoothing, grad_clip):
+def main(train_set, learning_rate, n_epochs, beta_0, beta_1,
+         batch_size, num_workers, hidden_size, model_file,
+         cuda, display_result_every, checkpoint_interval,
+         seed, label_smoothing, grad_clip, upsampling):
 
     #  make data between -1 and 1
     data_transform = transforms.Compose([transforms.ToTensor(),
@@ -33,7 +35,7 @@ def main(train_set, learning_rate, n_epochs, beta_0, beta_1, batch_size, num_wor
     if model_file:
         try:
             total_examples, fixed_noise, gen_losses, disc_losses, gen, disc = \
-                load_model(model_file, hidden_size)
+                load_model(model_file, hidden_size)  # TODO: upsampling method?
             print('model loaded successfully!')
 
         except:
@@ -42,6 +44,13 @@ def main(train_set, learning_rate, n_epochs, beta_0, beta_1, batch_size, num_wor
 
     if not model_file:
         print('creating new model...')
+        if upsampling == 'deconvolution':
+            from models.model import Generator, Discriminator
+        elif upsampling == 'nn':
+            from models.model_nn import Generator, Discriminator
+        elif upsampling == 'bilinear':
+            from models.model_bilinear import Generator, Discriminator
+
         gen = Generator(hidden_dim=hidden_size)
         disc = Discriminator(leaky=0.2)
 
@@ -225,6 +234,8 @@ if __name__ == '__main__':
     argparser.add_argument('--seed', type=int, default=1024)
     argparser.add_argument('--label_smoothing', action='store_true', default=True)
     argparser.add_argument('--grad_clip', type=int, default=10)
+    argparser.add_argument('--upsampling', type=str, default='deconvolution',
+                           help="'deconvolution', 'nn' or 'bilinear'")
     args = argparser.parse_args()
 
     args.cuda = args.cuda and torch.cuda.is_available()
@@ -236,11 +247,12 @@ if __name__ == '__main__':
          beta_1=args.beta_1,
          batch_size=args.batch_size,
          num_workers=args.num_workers,
-         hidden_size=args.hidden_size, 
+         hidden_size=args.hidden_size,
          model_file=args.model_file,
          cuda=args.cuda,
          display_result_every=args.display_result_every,
          checkpoint_interval=args.checkpoint_interval,
          seed=args.seed,
          label_smoothing=args.label_smoothing,
-         grad_clip=args.grad_clip)
+         grad_clip=args.grad_clip,
+         upsampling=args.upsampling)

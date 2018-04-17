@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import torch
 from torchvision import transforms
 import numpy as np
-from model import Generator, Discriminator
+from models.model import Generator, Discriminator # TODO: other upsampling methods?
 
 
 def save_image_sample(batch, cuda, total_examples):
