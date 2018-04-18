@@ -91,7 +91,7 @@ def main(train_set, learning_rate, n_epochs, beta_0, beta_1,
     np.random.seed(seed)  # reset training seed to ensure that batches remain the same between runs!
 
     try:
-        for epoch in range(prev_epoch+1, n_epochs):
+        for epoch in range(prev_epoch, n_epochs):
             disc_losses_epoch = []
             gen_losses_epoch = []
             for idx, (true_batch, _) in enumerate(train_dataloader):
