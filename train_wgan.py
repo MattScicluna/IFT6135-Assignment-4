@@ -70,12 +70,17 @@ def main(train_set, learning_rate, n_epochs, batch_size, num_workers, hidden_siz
     disc_optimizer = optim.RMSprop(disc.parameters(), lr=learning_rate, eps=1e-8)
 
     # results save folder
-    if not os.path.isdir('results/wgan_generated_images'):
-        os.mkdir('results/wgan_generated_images')
-    if not os.path.isdir('results/wgan_training_summaries'):
-        os.mkdir('results/wgan_training_summaries')
-    if not os.path.isdir('models'):
-        os.mkdir('models')
+    gen_images_dir = 'results/wgan_generated_images'
+    train_summaries_dir = 'results/wgan_training_summaries'
+    checkpoint_dir = 'results/wgan_checkpoints'
+    if not os.path.isdir('results'):
+        os.mkdir('results')
+    if not os.path.isdir(gen_images_dir):
+        os.mkdir(gen_images_dir)
+    if not os.path.isdir(train_summaries_dir):
+        os.mkdir(train_summaries_dir)
+    if not os.path.isdir(checkpoint_dir):
+        os.mkdir(checkpoint_dir)
 
     np.random.seed(seed)  # reset training seed to ensure that batches remain the same between runs!
 
@@ -152,16 +157,17 @@ def main(train_set, learning_rate, n_epochs, batch_size, num_workers, hidden_siz
                     save_checkpoint(total_examples=total_examples, fixed_noise=fixed_noise, disc=disc, gen=gen,
                                     gen_losses=gen_losses, disc_losses=disc_losses,
                                     disc_loss_per_epoch=disc_loss_per_epoch,
-                                    gen_loss_per_epoch=gen_loss_per_epoch)
+                                    gen_loss_per_epoch=gen_loss_per_epoch, directory=checkpoint_dir)
                     print("Checkpoint saved!")
 
                     #  sample images for inspection
                     save_image_sample(batch=gen.forward(fixed_noise.view(-1, hidden_size, 1, 1)),
-                                      cuda=cuda, total_examples=total_examples)
+                                      cuda=cuda, total_examples=total_examples, directory=gen_images_dir)
                     print("Saved images!")
 
                     # save learning curves for inspection
-                    save_learning_curve(gen_losses=gen_losses, disc_losses=disc_losses, total_examples=total_examples)
+                    save_learning_curve(gen_losses=gen_losses, disc_losses=disc_losses,
+                                        total_examples=total_examples, directory=train_summaries_dir)
                     print("Saved learning curves!")
 
             disc_loss_per_epoch.append(np.average(disc_losses_epoch))
@@ -169,7 +175,7 @@ def main(train_set, learning_rate, n_epochs, batch_size, num_workers, hidden_siz
 
             # Save epoch learning curve
             save_learning_curve_epoch(gen_losses=gen_loss_per_epoch, disc_losses=disc_loss_per_epoch,
-                                      total_epochs=epoch + 1)
+                                      total_epochs=epoch + 1, directory=train_summaries_dir)
             print("Saved learning curves!")
 
             print('epoch {}/{} disc loss: {:.4f}, gen loss: {:.4f}'
@@ -181,16 +187,17 @@ def main(train_set, learning_rate, n_epochs, batch_size, num_workers, hidden_siz
     except KeyboardInterrupt:
         print("Saving before quit...")
         save_checkpoint(total_examples=total_examples, fixed_noise=fixed_noise, disc=disc, gen=gen,
-                        gen_losses=gen_losses, disc_losses=disc_losses)
+                        gen_losses=gen_losses, disc_losses=disc_losses, directory=checkpoint_dir)
         print("Checkpoint saved!")
 
         # sample images for inspection
         save_image_sample(batch=gen.forward(fixed_noise.view(-1, hidden_size, 1, 1)),
-                          cuda=cuda, total_examples=total_examples)
+                          cuda=cuda, total_examples=total_examples, directory=gen_images_dir)
         print("Saved images!")
 
         # save learning curves for inspection
-        save_learning_curve(gen_losses=gen_losses, disc_losses=disc_losses, total_examples=total_examples)
+        save_learning_curve(gen_losses=gen_losses, disc_losses=disc_losses,
+                            total_examples=total_examples, directory=train_summaries_dir)
         print("Saved learning curves!")
 
 
