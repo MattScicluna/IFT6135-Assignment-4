@@ -83,7 +83,7 @@ def load_model(model_file, hidden_size):
 
 def save_learning_curve(gen_losses, disc_losses, total_examples):
     plt.figure()
-    plt.title('GAN Learning Curves')
+    #plt.title('GAN Learning Curves')
     plt.plot(gen_losses, color='red', label='Generator')
     plt.plot(disc_losses, color='blue', label='Discriminator')
     plt.xlabel('Steps')
@@ -94,7 +94,7 @@ def save_learning_curve(gen_losses, disc_losses, total_examples):
 
 def save_learning_curve_epoch(gen_losses, disc_losses, total_epochs):
     plt.figure()
-    plt.title('GAN Learning Curves')
+    #plt.title('GAN Learning Curves')
     plt.plot(gen_losses, color='red', label='Generator')
     plt.plot(disc_losses, color='blue', label='Discriminator')
     plt.xlabel('Epoch')
