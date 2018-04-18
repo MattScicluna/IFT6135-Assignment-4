@@ -4,7 +4,7 @@ followed by regular convolution in the generator.
 """
 
 import torch.nn as nn
-
+import torch.nn.functional as F
 
 class Generator(nn.Module):
     '''
@@ -18,53 +18,60 @@ class Generator(nn.Module):
         • Use LeakyReLU activation in the discriminator for all layers.
     '''
 
-    def __init__(self, hidden_dim, leaky=0.2):
+    def __init__(self, hidden_dim, dropout, leaky=0.2):
         super(Generator, self).__init__()
-        self.network = nn.Sequential(
-            nn.Upsample(scale_factor=4, mode='nearest'),
-            nn.Conv2d(in_channels=hidden_dim, out_channels=1024,
-                      kernel_size=3, padding=1),
-            nn.BatchNorm2d(1024),
-            nn.LeakyReLU(negative_slope=leaky),
+        self.fc1 = nn.Linear(in_features=100, out_features=4*4*1024)
+        self.bn1 = nn.BatchNorm2d(4*4*1024)
 
-            nn.Upsample(scale_factor=2, mode='nearest'),
-            nn.Conv2d(in_channels=1024, out_channels=512,
-                      kernel_size=3, padding=1),
-            nn.BatchNorm2d(512),
-            nn.LeakyReLU(negative_slope=leaky),
+        self.conv2 = nn.Conv2d(in_channels=1024, out_channels=512,
+                               kernel_size=3, padding=1)
+        self.bn2 = nn.BatchNorm2d(512)
 
-            nn.Upsample(scale_factor=2, mode='nearest'),
-            nn.Conv2d(in_channels=512, out_channels=256,
-                      kernel_size=3, padding=1),
-            nn.BatchNorm2d(256),
-            nn.LeakyReLU(negative_slope=leaky),
+        self.conv3 = nn.Conv2d(in_channels=512, out_channels=256,
+                               kernel_size=3, padding=1)
+        self.bn3 = nn.BatchNorm2d(256)
 
-            nn.Upsample(scale_factor=2, mode='nearest'),
-            nn.Conv2d(in_channels=256, out_channels=128,
-                      kernel_size=3, padding=1),
-            nn.BatchNorm2d(128),
-            nn.LeakyReLU(negative_slope=leaky),
+        self.conv4 = nn.Conv2d(in_channels=256, out_channels=128,
+                               kernel_size=3, padding=1)
+        self.bn4 = nn.BatchNorm2d(128)
 
-            nn.Upsample(scale_factor=2, mode='nearest'),
-            nn.Conv2d(in_channels=128, out_channels=3,
-                      kernel_size=3, padding=1),
-            nn.Tanh(),
-        )
+        self.conv5 = nn.Conv2d(in_channels=128, out_channels=3,
+                               kernel_size=3, padding=1)
 
     # forward
-    def forward(self, x):
-        return self.network(x)
+    def forward(self, x, dropout=0.4, leaky=0.2):
+        x = self.fc1(x.view(-1, 100))
+        x = self.bn1(x)
+        x = F.leaky_relu(x, leaky).view(-1, 1024, 4, 4)
+        x = F.dropout(x, dropout)
+
+        x = F.upsample(x, scale_factor=2, mode='nearest')
+        x = self.conv2(x)
+        x = self.bn2(x)
+        x = F.leaky_relu(x, leaky)
+
+        x = F.upsample(x, scale_factor=2, mode='nearest')
+        x = self.conv3(x)
+        x = self.bn3(x)
+        x = F.leaky_relu(x, leaky)
+
+        x = F.upsample(x, scale_factor=2, mode='nearest')
+        x = self.conv4(x)
+        x = self.bn4(x)
+        x = F.leaky_relu(x, leaky)
+
+        x = F.upsample(x, scale_factor=2, mode='nearest')
+        x = self.conv5(x)
+        x = F.tanh(x)
+        return x
 
     def weight_init(self, mean=0, std=0.02):
-        for param in self._modules['network']:
-            if isinstance(param, nn.ConvTranspose2d):
-                nn.init.normal(param.weight, mean=mean, std=std)
-                nn.init.constant(param.bias, 0.0)
-                #nn.init.uniform(param.bias, 0, 0)
+        for m in self._modules:
+            normal_init(self._modules[m], mean, std)
 
 
 class Discriminator(nn.Module):
-    def __init__(self, leaky=0.2):
+    def __init__(self, dropout, leaky=0.2):
         super(Discriminator, self).__init__()
         self.network = nn.Sequential(
             nn.Conv2d(in_channels=3, out_channels=128,
@@ -100,3 +107,18 @@ class Discriminator(nn.Module):
             if isinstance(param, nn.Conv2d):
                 nn.init.normal(param.weight, mean=mean, std=std)
                 nn.init.constant(param.bias, 0.0)
+
+
+class View(nn.Module):
+    def __init__(self, shape):
+        super(View, self).__init__()
+        self.shape = shape
+
+    def forward(self, input):
+        return input.view(self.shape)
+
+
+def normal_init(m, mean, std):
+    if isinstance(m, nn.ConvTranspose2d) or isinstance(m, nn.Conv2d):
+        m.weight.data.normal_(mean, std)
+        m.bias.data.zero_()
