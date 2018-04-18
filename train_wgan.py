@@ -7,18 +7,16 @@ from torch.utils.data import DataLoader
 from torchvision import datasets, transforms
 import torch
 from torch.autograd import Variable
-import torch.nn as nn
 import torch.optim as optim
 import numpy as np
+from models.model_wgan import Generator, Discriminator, wgan_Dloss, wgan_Gloss
 
 # from project
 from helpers import load_model, save_checkpoint, save_image_sample, save_learning_curve, save_learning_curve_epoch
 
 
-def main(train_set, learning_rate, n_epochs, beta_0, beta_1,
-         batch_size, num_workers, hidden_size, model_file,
-         cuda, display_result_every, checkpoint_interval,
-         seed, label_smoothing, grad_clip, upsampling):
+def main(train_set, learning_rate, n_epochs, batch_size, num_workers, hidden_size, model_file,
+         cuda, display_result_every, checkpoint_interval, seed, n_disc):
 
     #  make data between -1 and 1
     data_transform = transforms.Compose([transforms.ToTensor(),
@@ -34,8 +32,8 @@ def main(train_set, learning_rate, n_epochs, beta_0, beta_1,
     # initialize model
     if model_file:
         try:
-            total_examples, fixed_noise, gen_losses, disc_losses, gen, disc = \
-                load_model(model_file, hidden_size)  # TODO: upsampling method?
+            total_examples, fixed_noise, gen_losses, disc_losses, gen_loss_per_epoch, \
+            disc_loss_per_epoch, gen, disc = load_model(model_file, hidden_size)  # TODO: upsampling method?
             print('model loaded successfully!')
 
         except:
@@ -44,12 +42,6 @@ def main(train_set, learning_rate, n_epochs, beta_0, beta_1,
 
     if not model_file:
         print('creating new model...')
-        if upsampling == 'deconvolution':
-            from models.model import Generator, Discriminator
-        elif upsampling == 'nn':
-            from models.model_nn import Generator, Discriminator
-        elif upsampling == 'bilinear':
-            from models.model_bilinear import Generator, Discriminator
 
         gen = Generator(hidden_dim=hidden_size, leaky=0.2)
         disc = Discriminator(leaky=0.2)
@@ -73,18 +65,15 @@ def main(train_set, learning_rate, n_epochs, beta_0, beta_1,
         gen.cuda()
         disc.cuda()
 
-    # Binary Cross Entropy loss
-    BCE_loss = nn.BCELoss()
-
     # Adam optimizer
-    gen_optimizer = optim.Adam(gen.parameters(), lr=learning_rate, betas=(beta_0, beta_1), eps=1e-8)
-    disc_optimizer = optim.Adam(disc.parameters(), lr=learning_rate, betas=(beta_0, beta_1), eps=1e-8)
+    gen_optimizer = optim.RMSprop(gen.parameters(), lr=learning_rate, eps=1e-8)
+    disc_optimizer = optim.RMSprop(disc.parameters(), lr=learning_rate, eps=1e-8)
 
     # results save folder
-    if not os.path.isdir('results/generated_images'):
-        os.mkdir('results/generated_images')
-    if not os.path.isdir('results/training_summaries'):
-        os.mkdir('results/training_summaries')
+    if not os.path.isdir('results/wgan_generated_images'):
+        os.mkdir('results/wgan_generated_images')
+    if not os.path.isdir('results/wgan_training_summaries'):
+        os.mkdir('results/wgan_training_summaries')
     if not os.path.isdir('models'):
         os.mkdir('models')
 
@@ -97,92 +86,73 @@ def main(train_set, learning_rate, n_epochs, beta_0, beta_1,
             for idx, (true_batch, _) in enumerate(train_dataloader):
                 disc.zero_grad()
 
-                #  hack 6 of https://github.com/soumith/ganhacks
-                if label_smoothing:
-                    true_target = torch.FloatTensor(batch_size).uniform_(0.7, 1.2)
-                else:
-                    true_target = torch.ones(batch_size)
-
                 #  Sample  minibatch  of examples from data generating distribution
                 if cuda:
                     true_batch = Variable(true_batch.cuda())
-                    true_target = Variable(true_target.cuda())
                 else:
                     true_batch = Variable(true_batch)
-                    true_target = Variable(true_target)
 
-                #  train discriminator on true data
-                true_disc_result = disc.forward(true_batch)
-                disc_train_loss_true = BCE_loss(true_disc_result.squeeze(), true_target)
-                disc_train_loss_true.backward()
-                torch.nn.utils.clip_grad_norm(disc.parameters(), grad_clip)
+                # discriminator on true data
+                true_disc_output = disc.forward(true_batch)
 
                 #  Sample minibatch of m noise samples from noise prior p_g(z) and transform
-                if label_smoothing:
-                    fake_target = torch.FloatTensor(batch_size).uniform_(0, 0.3)
-                else:
-                    fake_target = torch.zeros(batch_size)
-
                 if cuda:
                     z = Variable(torch.randn(batch_size, hidden_size).cuda())
-                    fake_target = Variable(fake_target.cuda())
                 else:
                     z = Variable(torch.randn(batch_size, hidden_size))
-                    fake_target = Variable(fake_target)
 
-                #  train discriminator on fake data
+                # discriminator on fake data
                 fake_batch = gen.forward(z.view(-1, hidden_size, 1, 1))
-                fake_disc_result = disc.forward(fake_batch.detach())  # detach so gradients not computed for generator
-                disc_train_loss_false = BCE_loss(fake_disc_result.squeeze(), fake_target)
-                disc_train_loss_false.backward()
-                torch.nn.utils.clip_grad_norm(disc.parameters(), grad_clip)
+                fake_disc_output = disc.forward(
+                    fake_batch.detach())  # detach so gradients not computed for generator
+
+                # Optimize with new loss function
+                disc_loss = wgan_Dloss(true_disc_output, fake_disc_output)
+                disc_loss.backward()
                 disc_optimizer.step()
 
-                #  compute performance statistics
-                disc_train_loss = disc_train_loss_true + disc_train_loss_false
-                disc_losses_epoch.append(disc_train_loss.data[0])
+                # Weight clipping as done by WGAN
+                for p in disc.parameters():
+                    p.data.clamp_(-0.01, 0.01)
 
-                disc_fake_accuracy = 1 - fake_disc_result.mean().data[0]
-                disc_true_accuracy = true_disc_result.mean().data[0]
+                #  Store losses
+                disc_losses_epoch.append(disc_loss.data[0])
 
-                #  Sample minibatch of m noise samples from noise prior p_g(z) and transform
-                if label_smoothing:
-                    true_target = torch.FloatTensor(batch_size).uniform_(0.7, 1.2)
-                else:
-                    true_target = torch.ones(batch_size)
+                # Train generator after the discriminator has been trained n_disc times
+                if idx % n_disc:
+                    gen.zero_grad()
 
-                if cuda:
-                    z = Variable(torch.randn(batch_size, hidden_size).cuda())
-                    true_target = Variable(true_target.cuda())
-                else:
-                    z = Variable(torch.rand(batch_size, hidden_size))
-                    true_target = Variable(true_target)
+                    # Sample minibatch of m noise samples from noise prior p_g(z) and transform
+                    if cuda:
+                        z = Variable(torch.randn(batch_size, hidden_size).cuda())
+                    else:
+                        z = Variable(torch.rand(batch_size, hidden_size))
 
-                # train generator
-                gen.zero_grad()
-                fake_batch = gen.forward(z.view(-1, hidden_size, 1, 1))
-                disc_result = disc.forward(fake_batch)
-                gen_train_loss = BCE_loss(disc_result.squeeze(), true_target)
+                    # train generator
+                    fake_batch = gen.forward(z.view(-1, hidden_size, 1, 1))
+                    fake_disc_output = disc.forward(fake_batch)
 
-                gen_train_loss.backward()
-                torch.nn.utils.clip_grad_norm(gen.parameters(), grad_clip)
-                gen_optimizer.step()
-                gen_losses_epoch.append(gen_train_loss.data[0])
+                    # Optimize generator
+                    gen_loss = wgan_Gloss(fake_disc_output)
+                    gen_loss.backward()
+                    gen_optimizer.step()
+
+                    # Store losses
+                    gen_losses_epoch.append(gen_loss.data[0])
 
                 if (display_result_every != 0) and (total_examples % display_result_every == 0):
-                    print('epoch {}: step {}/{} disc true acc: {:.4f} disc fake acc: {:.4f} '
-                          'disc loss: {:.4f}, gen loss: {:.4f}'
-                          .format(epoch+1, idx+1, len(train_dataloader), disc_true_accuracy, disc_fake_accuracy,
-                                  disc_train_loss.data[0], gen_train_loss.data[0]))
+                    print('epoch {}: step {}/{} disc loss: {:.4f}, gen loss: {:.4f}'
+                          .format(epoch + 1, idx + 1, len(train_dataloader), disc_loss.data[0], gen_loss.data[0]))
 
                 # Checkpoint model
                 total_examples += batch_size
                 if (checkpoint_interval != 0) and (total_examples % checkpoint_interval == 0):
-
                     disc_losses.extend(disc_losses_epoch)
                     gen_losses.extend(gen_losses_epoch)
                     save_checkpoint(total_examples=total_examples, fixed_noise=fixed_noise, disc=disc, gen=gen,
-                                    gen_losses=gen_losses, disc_losses=disc_losses)
+                                    gen_losses=gen_losses, disc_losses=disc_losses,
+                                    disc_loss_per_epoch=disc_loss_per_epoch,
+                                    gen_loss_per_epoch=gen_loss_per_epoch)
                     print("Checkpoint saved!")
 
                     #  sample images for inspection
@@ -199,11 +169,11 @@ def main(train_set, learning_rate, n_epochs, beta_0, beta_1,
 
             # Save epoch learning curve
             save_learning_curve_epoch(gen_losses=gen_loss_per_epoch, disc_losses=disc_loss_per_epoch,
-                                      total_epochs=epoch+1)
+                                      total_epochs=epoch + 1)
             print("Saved learning curves!")
 
             print('epoch {}/{} disc loss: {:.4f}, gen loss: {:.4f}'
-                  .format(epoch+1, n_epochs, np.array(disc_losses_epoch).mean(), np.array(gen_losses_epoch).mean()))
+                  .format(epoch + 1, n_epochs, np.array(disc_losses_epoch).mean(), np.array(gen_losses_epoch).mean()))
 
             disc_losses.extend(disc_losses_epoch)
             gen_losses.extend(gen_losses_epoch)
@@ -225,35 +195,29 @@ def main(train_set, learning_rate, n_epochs, beta_0, beta_1,
 
 
 if __name__ == '__main__':
-
     # Parse command line arguments
     argparser = argparse.ArgumentParser()
     argparser.add_argument('--train_set', type=str, default='data/resized_celebA')
-    argparser.add_argument('--learning_rate', type=float, default=0.0002)
+    argparser.add_argument('--learning_rate', type=float, default=0.00005)
     argparser.add_argument('--n_epochs', type=int, default=30)
     argparser.add_argument('--batch_size', type=int, default=128)
-    argparser.add_argument('--beta_0', type=float, default=0.5)
-    argparser.add_argument('--beta_1', type=float, default=0.999)
     argparser.add_argument('--num_workers', type=int, default=8)
     argparser.add_argument('--hidden_size', type=int, default=100)
     argparser.add_argument('--model_file', type=str, default=None)
     argparser.add_argument('--cuda', action='store_true', default=False)
-    argparser.add_argument('--display_result_every', type=int, default=640)   # 640
+    argparser.add_argument('--display_result_every', type=int, default=640)  # 640
     argparser.add_argument('--checkpoint_interval', type=int, default=32000)  # 32000
     argparser.add_argument('--seed', type=int, default=1024)
-    argparser.add_argument('--label_smoothing', action='store_true', default=True)
-    argparser.add_argument('--grad_clip', type=int, default=10)
-    argparser.add_argument('--upsampling', type=str, default='deconvolution',
-                           help="'deconvolution', 'nn' or 'bilinear'")
+    argparser.add_argument('--n_disc', type=int, default=5)
+
     args = argparser.parse_args()
 
     args.cuda = args.cuda and torch.cuda.is_available()
+    print(args.cuda)
 
     main(train_set=args.train_set,
          learning_rate=args.learning_rate,
          n_epochs=args.n_epochs,
-         beta_0=args.beta_0,
-         beta_1=args.beta_1,
          batch_size=args.batch_size,
          num_workers=args.num_workers,
          hidden_size=args.hidden_size,
@@ -262,6 +226,4 @@ if __name__ == '__main__':
          display_result_every=args.display_result_every,
          checkpoint_interval=args.checkpoint_interval,
          seed=args.seed,
-         label_smoothing=args.label_smoothing,
-         grad_clip=args.grad_clip,
-         upsampling=args.upsampling)
+         n_disc=args.n_disc)
