@@ -145,7 +145,7 @@ def main(train_set, learning_rate, n_epochs, batch_size, num_workers, hidden_siz
                     # Store losses
                     gen_losses_epoch.append(gen_loss.data[0])
 
-                if (display_result_every != 0) and (total_examples % display_result_every == 0):
+                if (total_examples != 0) and (total_examples % n_disc*4 == 0):
                     print('epoch {}: step {}/{} disc loss: {:.4f}, gen loss: {:.4f}'
                           .format(epoch + 1, idx + 1, len(train_dataloader), disc_loss.data[0], gen_loss.data[0]))
 
