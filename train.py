@@ -12,7 +12,7 @@ import torch.optim as optim
 import numpy as np
 
 # from project
-from helpers import load_model, Generator, Discriminator, save_checkpoint, save_image_sample, save_learning_curve, save_learning_curve_epoch
+from helpers import load_model, save_checkpoint, save_image_sample, save_learning_curve, save_learning_curve_epoch
 
 
 def main(train_set, learning_rate, n_epochs, beta_0, beta_1,
@@ -35,16 +35,15 @@ def main(train_set, learning_rate, n_epochs, beta_0, beta_1,
     if model_file:
         try:
             total_examples, fixed_noise, gen_losses, disc_losses, gen_loss_per_epoch, \
-            disc_loss_per_epoch, gen, disc = load_model(model_file, hidden_size)  # TODO: upsampling method? dropout
+            disc_loss_per_epoch, prev_epoch, gen, disc = load_model(model_file, hidden_size, upsampling, cuda)
             print('model loaded successfully!')
-
         except:
             print('could not load model! creating new model...')
             model_file = None
 
     if not model_file:
         print('creating new model...')
-        if upsampling == 'deconvolution':
+        if upsampling == 'transpose':
             from models.model import Generator, Discriminator
         elif upsampling == 'nn':
             from models.model_nn import Generator, Discriminator
@@ -62,6 +61,7 @@ def main(train_set, learning_rate, n_epochs, beta_0, beta_1,
         gen_losses = []
         disc_loss_per_epoch = []
         gen_loss_per_epoch = []
+        prev_epoch = 0
 
         #  Sample minibatch of m noise samples from noise prior p_g(z) and transform
         if cuda:
@@ -91,7 +91,7 @@ def main(train_set, learning_rate, n_epochs, beta_0, beta_1,
     np.random.seed(seed)  # reset training seed to ensure that batches remain the same between runs!
 
     try:
-        for epoch in range(n_epochs):
+        for epoch in range(prev_epoch, n_epochs):
             disc_losses_epoch = []
             gen_losses_epoch = []
             for idx, (true_batch, _) in enumerate(train_dataloader):
@@ -184,7 +184,7 @@ def main(train_set, learning_rate, n_epochs, beta_0, beta_1,
                     save_checkpoint(total_examples=total_examples, fixed_noise=fixed_noise, disc=disc, gen=gen,
                                     gen_losses=gen_losses, disc_losses=disc_losses,
                                     disc_loss_per_epoch=disc_loss_per_epoch,
-                                    gen_loss_per_epoch=gen_loss_per_epoch)
+                                    gen_loss_per_epoch=gen_loss_per_epoch, epoch=epoch)
                     print("Checkpoint saved!")
 
                     #  sample images for inspection
@@ -246,8 +246,8 @@ if __name__ == '__main__':
     argparser.add_argument('--label_smoothing', action='store_true', default=True)
     argparser.add_argument('--grad_clip', type=int, default=10)
     argparser.add_argument('--dropout', type=float, default=0.4)
-    argparser.add_argument('--upsampling', type=str, default='deconvolution',
-                           help="'deconvolution', 'nn' or 'bilinear'")
+    argparser.add_argument('--upsampling', type=str, default='transpose',
+                           help="'transpose', 'nn' or 'bilinear'")
     args = argparser.parse_args()
 
     args.cuda = args.cuda and torch.cuda.is_available()

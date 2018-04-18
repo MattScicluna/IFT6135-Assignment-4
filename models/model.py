@@ -17,7 +17,7 @@ class Generator(nn.Module):
         • Use LeakyReLU activation in the discriminator for all layers.
     '''
 
-    def __init__(self, hidden_dim, leaky=0.2):
+    def __init__(self, hidden_dim, dropout=0.4, leaky=0.2):
         super(Generator, self).__init__()
         self.network = nn.Sequential(
             nn.ConvTranspose2d(in_channels=hidden_dim, out_channels=1024,
@@ -26,7 +26,7 @@ class Generator(nn.Module):
             nn.LeakyReLU(negative_slope=leaky),
 
             nn.ConvTranspose2d(in_channels=1024, out_channels=512,
-                           kernel_size=4, stride=2, padding=1),
+                               kernel_size=4, stride=2, padding=1),
             nn.BatchNorm2d(512),
             nn.LeakyReLU(negative_slope=leaky),
 
@@ -50,17 +50,13 @@ class Generator(nn.Module):
         return self.network(x)
 
     def weight_init(self, mean=0, std=0.02):
-        for param in self._modules['network']:
-            if isinstance(param, nn.ConvTranspose2d):
-                nn.init.normal(param.weight, mean=mean, std=std)
-                nn.init.constant(param.bias, 0.0)
-                #nn.init.uniform(param.bias, 0, 0)
-
+        for m in self._modules:
+            normal_init(self._modules[m], mean, std)
 
 
 class Discriminator(nn.Module):
 
-    def __init__(self, leaky=0.2):
+    def __init__(self, dropout=0.4, leaky=0.2):
         super(Discriminator, self).__init__()
         self.network = nn.Sequential(
             nn.Conv2d(in_channels=3, out_channels=128,
@@ -96,3 +92,9 @@ class Discriminator(nn.Module):
             if isinstance(param, nn.Conv2d):
                 nn.init.normal(param.weight, mean=mean, std=std)
                 nn.init.constant(param.bias, 0.0)
+
+
+def normal_init(m, mean, std):
+    if isinstance(m, nn.ConvTranspose2d) or isinstance(m, nn.Conv2d):
+        m.weight.data.normal_(mean, std)
+        m.bias.data.zero_()
