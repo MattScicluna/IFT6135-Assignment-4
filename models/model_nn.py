@@ -18,10 +18,14 @@ class Generator(nn.Module):
         • Use LeakyReLU activation in the discriminator for all layers.
     '''
 
-    def __init__(self, hidden_dim, dropout, leaky=0.2):
+    def __init__(self, hidden_dim, dropout=0.4, leaky=0.2):
         super(Generator, self).__init__()
+        self.hidden_dim = hidden_dim
+        self.dropout = dropout
+        self.leaky = leaky
+
         self.fc1 = nn.Linear(in_features=100, out_features=4*4*1024)
-        self.bn1 = nn.BatchNorm2d(4*4*1024)
+        self.bn1 = nn.BatchNorm2d(4 * 4 * 1024)
 
         self.conv2 = nn.Conv2d(in_channels=1024, out_channels=512,
                                kernel_size=3, padding=1)
@@ -39,26 +43,26 @@ class Generator(nn.Module):
                                kernel_size=3, padding=1)
 
     # forward
-    def forward(self, x, dropout=0.4, leaky=0.2):
+    def forward(self, x):
         x = self.fc1(x.view(-1, 100))
         x = self.bn1(x)
-        x = F.leaky_relu(x, leaky).view(-1, 1024, 4, 4)
-        x = F.dropout(x, dropout)
+        x = F.leaky_relu(x, self.leaky).view(-1, 1024, 4, 4)
+        x = F.dropout(x, self.dropout)
 
         x = F.upsample(x, scale_factor=2, mode='nearest')
         x = self.conv2(x)
         x = self.bn2(x)
-        x = F.leaky_relu(x, leaky)
+        x = F.leaky_relu(x, self.leaky)
 
         x = F.upsample(x, scale_factor=2, mode='nearest')
         x = self.conv3(x)
         x = self.bn3(x)
-        x = F.leaky_relu(x, leaky)
+        x = F.leaky_relu(x, self.leaky)
 
         x = F.upsample(x, scale_factor=2, mode='nearest')
         x = self.conv4(x)
         x = self.bn4(x)
-        x = F.leaky_relu(x, leaky)
+        x = F.leaky_relu(x, self.leaky)
 
         x = F.upsample(x, scale_factor=2, mode='nearest')
         x = self.conv5(x)
@@ -71,7 +75,7 @@ class Generator(nn.Module):
 
 
 class Discriminator(nn.Module):
-    def __init__(self, dropout, leaky=0.2):
+    def __init__(self, dropout=0.4, leaky=0.2):
         super(Discriminator, self).__init__()
         self.network = nn.Sequential(
             nn.Conv2d(in_channels=3, out_channels=128,
@@ -107,15 +111,6 @@ class Discriminator(nn.Module):
             if isinstance(param, nn.Conv2d):
                 nn.init.normal(param.weight, mean=mean, std=std)
                 nn.init.constant(param.bias, 0.0)
-
-
-class View(nn.Module):
-    def __init__(self, shape):
-        super(View, self).__init__()
-        self.shape = shape
-
-    def forward(self, input):
-        return input.view(self.shape)
 
 
 def normal_init(m, mean, std):
