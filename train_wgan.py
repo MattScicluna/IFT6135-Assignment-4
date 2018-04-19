@@ -37,7 +37,7 @@ def main(train_set, learning_rate, n_epochs, batch_size, num_workers, hidden_siz
             print('model loaded successfully!')
 
             if cuda:
-                fixed_noise = Variable(fixed_noise.cuda())
+                fixed_noise = fixed_noise.cuda()
 
         except:
             print('could not load model! creating new model...')
