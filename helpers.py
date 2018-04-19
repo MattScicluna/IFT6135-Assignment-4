@@ -62,8 +62,11 @@ def compute_model_stats(model):
         print('avg weight value: {:.3f}'.format(params.mean().data[0]))
 
 
-def load_model(model_file, hidden_size):
-    from_before = torch.load(model_file)
+def load_model(model_file, hidden_size, upsampling, cuda=False):
+    if cuda:
+        from_before = torch.load(model_file)
+    else:
+        from_before = torch.load(model_file, map_location=lambda storage, loc: storage)
     total_examples = from_before['total_examples']
     gen_losses = from_before['gen_losses']
     disc_losses = from_before['disc_losses']
@@ -75,8 +78,15 @@ def load_model(model_file, hidden_size):
     epoch = from_before['epoch']
 
     # load generator and discriminator
-    gen = Generator(hidden_dim=hidden_size)
-    disc = Discriminator(leaky=0.2)
+    if upsampling == 'transpose':
+        from models.model import Generator, Discriminator
+    elif upsampling == 'nn':
+        from models.model_nn import Generator, Discriminator
+    elif upsampling == 'bilinear':
+        from models.model_bilinear import Generator, Discriminator
+
+    gen = Generator(hidden_dim=hidden_size, dropout=0.4)   # TODO: save dropout in checkpoint
+    disc = Discriminator(leaky=0.2, dropout=0.4)           # TODO: same here
     disc.load_state_dict(disc_state_dict)
     gen.load_state_dict(gen_state_dict)
     return total_examples, fixed_noise, gen_losses, disc_losses, \
@@ -97,8 +107,8 @@ def save_learning_curve(gen_losses, disc_losses, total_examples, directory):
 def save_learning_curve_epoch(gen_losses, disc_losses, total_epochs, directory):
     plt.figure()
     #plt.title('GAN Learning Curves')
-    plt.plot(gen_losses, color='red', label='Generator')
-    plt.plot(disc_losses, color='blue', label='Discriminator')
+    plt.plot(np.arange(len(gen_losses)) + 1, gen_losses, color='red', label='Generator')
+    plt.plot(np.arange(len(disc_losses)) + 1, disc_losses, color='blue', label='Discriminator')
     plt.xlabel('Epoch')
     plt.ylabel('Loss')
     plt.legend(loc='upper right')
