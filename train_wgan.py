@@ -124,7 +124,7 @@ def main(train_set, learning_rate, n_epochs, batch_size, num_workers, hidden_siz
                 disc_losses_epoch.append(disc_loss.data[0])
 
                 # Train generator after the discriminator has been trained n_disc times
-                if idx % n_disc:
+                if (idx+1) % n_disc == 0:
                     gen.zero_grad()
 
                     # Sample minibatch of m noise samples from noise prior p_g(z) and transform
@@ -157,7 +157,7 @@ def main(train_set, learning_rate, n_epochs, batch_size, num_workers, hidden_siz
                     save_checkpoint(total_examples=total_examples, fixed_noise=fixed_noise, disc=disc, gen=gen,
                                     gen_losses=gen_losses, disc_losses=disc_losses,
                                     disc_loss_per_epoch=disc_loss_per_epoch,
-                                    gen_loss_per_epoch=gen_loss_per_epoch, directory=checkpoint_dir)
+                                    gen_loss_per_epoch=gen_loss_per_epoch, epoch=epoch, directory=checkpoint_dir)
                     print("Checkpoint saved!")
 
                     #  sample images for inspection
@@ -187,7 +187,7 @@ def main(train_set, learning_rate, n_epochs, batch_size, num_workers, hidden_siz
     except KeyboardInterrupt:
         print("Saving before quit...")
         save_checkpoint(total_examples=total_examples, fixed_noise=fixed_noise, disc=disc, gen=gen,
-                        gen_losses=gen_losses, disc_losses=disc_losses, directory=checkpoint_dir)
+                        gen_losses=gen_losses, disc_losses=disc_losses, epoch=epoch, directory=checkpoint_dir)
         print("Checkpoint saved!")
 
         # sample images for inspection
@@ -216,11 +216,10 @@ if __name__ == '__main__':
     argparser.add_argument('--checkpoint_interval', type=int, default=32000)  # 32000
     argparser.add_argument('--seed', type=int, default=1024)
     argparser.add_argument('--n_disc', type=int, default=5)
-
     args = argparser.parse_args()
 
     args.cuda = args.cuda and torch.cuda.is_available()
-    print(args.cuda)
+    print("Using GPU?", args.cuda)
 
     main(train_set=args.train_set,
          learning_rate=args.learning_rate,
