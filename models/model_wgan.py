@@ -10,36 +10,66 @@ import torch
 
 
 class Generator(nn.Module):
-    # Network Architecture is exactly same as in infoGAN (https://arxiv.org/abs/1606.03657)
-    # Architecture : FC1024_BR-FC7x7x128_BR-(64)4dc2s_BR-(1)4dc2s_S
-    def __init__(self, hidden_dim, leaky=0.2):
+    '''
+    Following carefully the wisdom of: from https://arxiv.org/pdf/1511.06434.pdf
+    Architecture guidelines for stable Deep Convolutional GANs:
+        • Replace any pooling layers with strided convolutions (discriminator) and
+          fractional-strided convolutions (generator).
+        • Use batchnorm in both the generator and the discriminator.
+        • Remove fully connected hidden layers for deeper architectures.
+        • Use ReLU activation in generator for all layers except for the output, which uses Tanh.
+        • Use LeakyReLU activation in the discriminator for all layers.
+    '''
+
+    def __init__(self, hidden_dim, dropout=0.4, leaky=0.2):
         super(Generator, self).__init__()
-        self.input_height = 64
-        self.input_width = 64
-        self.input_dim = hidden_dim
-        self.output_dim = 3
+        self.hidden_dim = hidden_dim
+        self.dropout = dropout
+        self.leaky = leaky
 
-        self.fc = nn.Sequential(
-            nn.Linear(self.input_dim, 1024),
-            nn.BatchNorm1d(1024),
-            nn.ReLU(),
-            nn.Linear(1024, 128 * (self.input_height // 4) * (self.input_width // 4)),
-            nn.BatchNorm1d(128 * (self.input_height // 4) * (self.input_width // 4)),
-            nn.ReLU(),
-        )
-        self.deconv = nn.Sequential(
-            nn.ConvTranspose2d(128, 64, 4, 2, 1),
-            nn.BatchNorm2d(64),
-            nn.ReLU(),
-            nn.ConvTranspose2d(64, self.output_dim, 4, 2, 1),
-            nn.Tanh(),
-        )
+        self.fc1 = nn.Linear(in_features=100, out_features=4*4*1024)
+        self.bn1 = nn.BatchNorm2d(4 * 4 * 1024)
 
-    def forward(self, input):
-        x = self.fc(input)
-        x = x.view(-1, 128, (self.input_height // 4), (self.input_width // 4))
-        x = self.deconv(x)
+        self.conv2 = nn.Conv2d(in_channels=1024, out_channels=512,
+                               kernel_size=3, padding=1)
+        self.bn2 = nn.BatchNorm2d(512)
 
+        self.conv3 = nn.Conv2d(in_channels=512, out_channels=256,
+                               kernel_size=3, padding=1)
+        self.bn3 = nn.BatchNorm2d(256)
+
+        self.conv4 = nn.Conv2d(in_channels=256, out_channels=128,
+                               kernel_size=3, padding=1)
+        self.bn4 = nn.BatchNorm2d(128)
+
+        self.conv5 = nn.Conv2d(in_channels=128, out_channels=3,
+                               kernel_size=3, padding=1)
+
+    # forward
+    def forward(self, x):
+        x = self.fc1(x.view(-1, 100))
+        x = self.bn1(x)
+        x = F.leaky_relu(x, self.leaky).view(-1, 1024, 4, 4)
+        x = F.dropout(x, self.dropout)
+
+        x = F.upsample(x, scale_factor=2, mode='nearest')
+        x = self.conv2(x)
+        x = self.bn2(x)
+        x = F.leaky_relu(x, self.leaky)
+
+        x = F.upsample(x, scale_factor=2, mode='nearest')
+        x = self.conv3(x)
+        x = self.bn3(x)
+        x = F.leaky_relu(x, self.leaky)
+
+        x = F.upsample(x, scale_factor=2, mode='nearest')
+        x = self.conv4(x)
+        x = self.bn4(x)
+        x = F.leaky_relu(x, self.leaky)
+
+        x = F.upsample(x, scale_factor=2, mode='nearest')
+        x = self.conv5(x)
+        x = F.tanh(x)
         return x
 
     def weight_init(self, mean=0, std=0.02):
@@ -48,40 +78,41 @@ class Generator(nn.Module):
 
 
 class Discriminator(nn.Module):
-    # Network Architecture is exactly same as in infoGAN (https://arxiv.org/abs/1606.03657)
-    # Architecture : (64)4c2s-(128)4c2s_BL-FC1024_BL-FC1_S
     def __init__(self, leaky=0.2):
         super(Discriminator, self).__init__()
-        self.input_height = 64
-        self.input_width = 64
-        self.input_dim = 3
-        self.output_dim = 1
+        self.network = nn.Sequential(
+            nn.Conv2d(in_channels=3, out_channels=128,
+                      kernel_size=4, stride=2, padding=1),
+            nn.LeakyReLU(negative_slope=leaky),
 
-        self.conv = nn.Sequential(
-            nn.Conv2d(self.input_dim, 64, 4, 2, 1),
-            nn.LeakyReLU(0.2),
-            nn.Conv2d(64, 128, 4, 2, 1),
-            nn.BatchNorm2d(128),
-            nn.LeakyReLU(0.2),
+            nn.Conv2d(in_channels=128, out_channels=256,
+                      kernel_size=4, stride=2, padding=1),
+            nn.BatchNorm2d(256),
+            nn.LeakyReLU(negative_slope=leaky),
+
+            nn.Conv2d(in_channels=256, out_channels=512,
+                      kernel_size=4, stride=2, padding=1),
+            nn.BatchNorm2d(512),
+            nn.LeakyReLU(negative_slope=leaky),
+
+            nn.Conv2d(in_channels=512, out_channels=1024,
+                      kernel_size=4, stride=2, padding=1),
+            nn.BatchNorm2d(1024),
+            nn.LeakyReLU(negative_slope=leaky),
+
+            nn.Conv2d(in_channels=1024, out_channels=1,
+                      kernel_size=4, stride=1, padding=0),
         )
-        self.fc = nn.Sequential(
-            nn.Linear(128 * (self.input_height // 4) * (self.input_width // 4), 1024),
-            nn.BatchNorm1d(1024),
-            nn.LeakyReLU(0.2),
-            nn.Linear(1024, self.output_dim),
-            nn.Tanh(),
-        )
 
-    def forward(self, input):
-        x = self.conv(input)
-        x = x.view(-1, 128 * (self.input_height // 4) * (self.input_width // 4))
-        x = self.fc(x)
-
-        return x
+    # forward
+    def forward(self, x):
+        return self.network(x)
 
     def weight_init(self, mean=0, std=0.02):
-        for m in self._modules:
-            normal_init(self._modules[m], mean, std)
+        for param in self._modules['network']:
+            if isinstance(param, nn.Conv2d):
+                nn.init.normal(param.weight, mean=mean, std=std)
+                nn.init.constant(param.bias, 0.0)
 
 
 def normal_init(m, mean, std):

@@ -108,8 +108,7 @@ def main(train_set, learning_rate, n_epochs, batch_size, num_workers, hidden_siz
                     z = Variable(torch.randn(batch_size, hidden_size))
 
                 # discriminator on fake data
-                # fake_batch = gen.forward(z.view(-1, hidden_size, 1, 1))
-                fake_batch = gen.forward(z)
+                fake_batch = gen.forward(z.view(-1, hidden_size, 1, 1))
                 fake_disc_output = disc.forward(
                     fake_batch.detach())  # detach so gradients not computed for generator
 
@@ -136,8 +135,7 @@ def main(train_set, learning_rate, n_epochs, batch_size, num_workers, hidden_siz
                         z = Variable(torch.rand(batch_size, hidden_size))
 
                     # train generator
-                    # fake_batch = gen.forward(z.view(-1, hidden_size, 1, 1))
-                    fake_batch = gen.forward(z)
+                    fake_batch = gen.forward(z.view(-1, hidden_size, 1, 1))
                     fake_disc_output = disc.forward(fake_batch)
 
                     # Optimize generator
@@ -164,7 +162,7 @@ def main(train_set, learning_rate, n_epochs, batch_size, num_workers, hidden_siz
                     print("Checkpoint saved!")
 
                     #  sample images for inspection
-                    save_image_sample(batch=gen.forward(fixed_noise),  # .view(-1, hidden_size, 1, 1)
+                    save_image_sample(batch=gen.forward(fixed_noise.view(-1, hidden_size, 1, 1)),
                                       cuda=cuda, total_examples=total_examples, directory=gen_images_dir)
                     print("Saved images!")
 
@@ -196,7 +194,7 @@ def main(train_set, learning_rate, n_epochs, batch_size, num_workers, hidden_siz
         print("Checkpoint saved!")
 
         # sample images for inspection
-        save_image_sample(batch=gen.forward(fixed_noise),  # .view(-1, hidden_size, 1, 1)
+        save_image_sample(batch=gen.forward(fixed_noise.view(-1, hidden_size, 1, 1)),
                           cuda=cuda, total_examples=total_examples, directory=gen_images_dir)
         print("Saved images!")
 
