@@ -81,12 +81,17 @@ def main(train_set, learning_rate, n_epochs, beta_0, beta_1,
     disc_optimizer = optim.Adam(disc.parameters(), lr=learning_rate, betas=(beta_0, beta_1), eps=1e-8)
 
     # results save folder
-    if not os.path.isdir('results/generated_images'):
-        os.mkdir('results/generated_images')
-    if not os.path.isdir('results/training_summaries'):
-        os.mkdir('results/training_summaries')
-    if not os.path.isdir('models'):
-        os.mkdir('models')
+    gen_images_dir = 'results/generated_images'
+    train_summaries_dir = 'results/training_summaries'
+    checkpoint_dir = 'results/checkpoints'
+    if not os.path.isdir('results'):
+        os.mkdir('results')
+    if not os.path.isdir(gen_images_dir):
+        os.mkdir(gen_images_dir)
+    if not os.path.isdir(train_summaries_dir):
+        os.mkdir(train_summaries_dir)
+    if not os.path.isdir(checkpoint_dir):
+        os.mkdir(checkpoint_dir)
 
     np.random.seed(seed)  # reset training seed to ensure that batches remain the same between runs!
 
@@ -169,7 +174,7 @@ def main(train_set, learning_rate, n_epochs, beta_0, beta_1,
                 gen_optimizer.step()
                 gen_losses_epoch.append(gen_train_loss.data[0])
 
-                if (display_result_every != 0) and (total_examples % display_result_every == 0):
+                if (total_examples != 0) and (total_examples % display_result_every == 0):
                     print('epoch {}: step {}/{} disc true acc: {:.4f} disc fake acc: {:.4f} '
                           'disc loss: {:.4f}, gen loss: {:.4f}'
                           .format(epoch+1, idx+1, len(train_dataloader), disc_true_accuracy, disc_fake_accuracy,
@@ -177,23 +182,24 @@ def main(train_set, learning_rate, n_epochs, beta_0, beta_1,
 
                 # Checkpoint model
                 total_examples += batch_size
-                if (checkpoint_interval != 0) and (total_examples % checkpoint_interval == 0):
+                if (total_examples != 0) and (total_examples % checkpoint_interval == 0):
 
                     disc_losses.extend(disc_losses_epoch)
                     gen_losses.extend(gen_losses_epoch)
                     save_checkpoint(total_examples=total_examples, fixed_noise=fixed_noise, disc=disc, gen=gen,
                                     gen_losses=gen_losses, disc_losses=disc_losses,
                                     disc_loss_per_epoch=disc_loss_per_epoch,
-                                    gen_loss_per_epoch=gen_loss_per_epoch, epoch=epoch)
+                                    gen_loss_per_epoch=gen_loss_per_epoch, epoch=epoch, directory=checkpoint_dir)
                     print("Checkpoint saved!")
 
                     #  sample images for inspection
                     save_image_sample(batch=gen.forward(fixed_noise.view(-1, hidden_size, 1, 1)),
-                                      cuda=cuda, total_examples=total_examples)
+                                      cuda=cuda, total_examples=total_examples, directory=gen_images_dir)
                     print("Saved images!")
 
                     # save learning curves for inspection
-                    save_learning_curve(gen_losses=gen_losses, disc_losses=disc_losses, total_examples=total_examples)
+                    save_learning_curve(gen_losses=gen_losses, disc_losses=disc_losses, total_examples=total_examples,
+                                        directory=train_summaries_dir)
                     print("Saved learning curves!")
 
             disc_loss_per_epoch.append(np.average(disc_losses_epoch))
@@ -201,7 +207,7 @@ def main(train_set, learning_rate, n_epochs, beta_0, beta_1,
 
             # Save epoch learning curve
             save_learning_curve_epoch(gen_losses=gen_loss_per_epoch, disc_losses=disc_loss_per_epoch,
-                                      total_epochs=epoch+1)
+                                      total_epochs=epoch+1, directory=train_summaries_dir)
             print("Saved learning curves!")
 
             print('epoch {}/{} disc loss: {:.4f}, gen loss: {:.4f}'
@@ -213,16 +219,17 @@ def main(train_set, learning_rate, n_epochs, beta_0, beta_1,
     except KeyboardInterrupt:
         print("Saving before quit...")
         save_checkpoint(total_examples=total_examples, fixed_noise=fixed_noise, disc=disc, gen=gen,
-                        gen_losses=gen_losses, disc_losses=disc_losses)
+                        gen_losses=gen_losses, disc_losses=disc_losses, epoch=epoch, directory=checkpoint_dir)
         print("Checkpoint saved!")
 
         # sample images for inspection
         save_image_sample(batch=gen.forward(fixed_noise.view(-1, hidden_size, 1, 1)),
-                          cuda=cuda, total_examples=total_examples)
+                          cuda=cuda, total_examples=total_examples, directory=gen_images_dir)
         print("Saved images!")
 
         # save learning curves for inspection
-        save_learning_curve(gen_losses=gen_losses, disc_losses=disc_losses, total_examples=total_examples)
+        save_learning_curve(gen_losses=gen_losses, disc_losses=disc_losses, total_examples=total_examples,
+                            directory=train_summaries_dir)
         print("Saved learning curves!")
 
 
