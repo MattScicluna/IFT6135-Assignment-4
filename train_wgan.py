@@ -16,7 +16,7 @@ from helpers import load_model_wgan, save_checkpoint, save_image_sample, save_le
 
 
 def main(train_set, learning_rate, n_epochs, batch_size, num_workers, hidden_size, model_file,
-         cuda, display_result_every, checkpoint_interval, seed, n_disc):
+         cuda, checkpoint_interval, seed, n_disc):
 
     #  make data between -1 and 1
     data_transform = transforms.Compose([transforms.ToTensor(),
@@ -33,7 +33,7 @@ def main(train_set, learning_rate, n_epochs, batch_size, num_workers, hidden_siz
     if model_file:
         try:
             total_examples, fixed_noise, gen_losses, disc_losses, gen_loss_per_epoch, \
-            disc_loss_per_epoch, gen, disc = load_model_wgan(model_file, hidden_size)  # TODO: upsampling method?
+            disc_loss_per_epoch, prev_epoch, gen, disc = load_model_wgan(model_file, hidden_size)  # TODO: upsampling method?
             print('model loaded successfully!')
 
         except:
@@ -54,6 +54,7 @@ def main(train_set, learning_rate, n_epochs, batch_size, num_workers, hidden_siz
         gen_losses = []
         disc_loss_per_epoch = []
         gen_loss_per_epoch = []
+        prev_epoch = 0
 
         #  Sample minibatch of m noise samples from noise prior p_g(z) and transform
         if cuda:
@@ -85,7 +86,7 @@ def main(train_set, learning_rate, n_epochs, batch_size, num_workers, hidden_siz
     np.random.seed(seed)  # reset training seed to ensure that batches remain the same between runs!
 
     try:
-        for epoch in range(n_epochs):
+        for epoch in range(prev_epoch, n_epochs):
             disc_losses_epoch = []
             gen_losses_epoch = []
             for idx, (true_batch, _) in enumerate(train_dataloader):
@@ -214,7 +215,6 @@ if __name__ == '__main__':
     argparser.add_argument('--hidden_size', type=int, default=100)
     argparser.add_argument('--model_file', type=str, default=None)
     argparser.add_argument('--cuda', action='store_true', default=False)
-    argparser.add_argument('--display_result_every', type=int, default=640)  # 640
     argparser.add_argument('--checkpoint_interval', type=int, default=32000)  # 32000
     argparser.add_argument('--seed', type=int, default=1024)
     argparser.add_argument('--n_disc', type=int, default=5)
@@ -231,7 +231,6 @@ if __name__ == '__main__':
          hidden_size=args.hidden_size,
          model_file=args.model_file,
          cuda=args.cuda,
-         display_result_every=args.display_result_every,
          checkpoint_interval=args.checkpoint_interval,
          seed=args.seed,
          n_disc=args.n_disc)
