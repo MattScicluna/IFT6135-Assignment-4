@@ -8,7 +8,7 @@ import numpy as np
 from models.model import Generator, Discriminator  # TODO: other upsampling methods?
 
 
-def save_image_sample(batch, cuda, total_examples, directory):
+def save_image_sample(batch, cuda, total_examples):
     invTrans = transforms.Compose([transforms.Normalize(mean=[0., 0., 0.],
                                                         std=[1 / 0.5, 1 / 0.5, 1 / 0.5]),
                                    transforms.Normalize(mean=[-0.5, -0.5, -0.5],
@@ -31,7 +31,7 @@ def save_image_sample(batch, cuda, total_examples, directory):
             axarr[i, j].axis('off')
 
     f.tight_layout()
-    f.savefig(directory+'/gen_images_after_{}_examples'.format(total_examples))
+    f.savefig('results/generated_images/gen_images_after_{}_examples'.format(total_examples))
 
 
 def save_checkpoint(total_examples, disc, gen, gen_losses, disc_losses,
@@ -81,7 +81,7 @@ def load_model(model_file, hidden_size):
            gen_loss_per_epoch, disc_loss_per_epoch, gen, disc
 
 
-def save_learning_curve(gen_losses, disc_losses, total_examples, directory):
+def save_learning_curve(gen_losses, disc_losses, total_examples):
     plt.figure()
     #plt.title('GAN Learning Curves')
     plt.plot(gen_losses, color='red', label='Generator')
@@ -89,10 +89,10 @@ def save_learning_curve(gen_losses, disc_losses, total_examples, directory):
     plt.xlabel('Steps')
     plt.ylabel('Loss')
     plt.legend(loc='upper right')
-    plt.savefig(directory+'/learn_curves_after_{}_examples'.format(total_examples))
+    plt.savefig('results/training_summaries/learn_curves_after_{}_examples'.format(total_examples))
 
 
-def save_learning_curve_epoch(gen_losses, disc_losses, total_epochs, directory):
+def save_learning_curve_epoch(gen_losses, disc_losses, total_epochs):
     plt.figure()
     #plt.title('GAN Learning Curves')
     plt.plot(gen_losses, color='red', label='Generator')
@@ -100,4 +100,4 @@ def save_learning_curve_epoch(gen_losses, disc_losses, total_epochs, directory):
     plt.xlabel('Epoch')
     plt.ylabel('Loss')
     plt.legend(loc='upper right')
-    plt.savefig(directory+'/learn_curves_after_{}_epochs'.format(total_epochs))
+    plt.savefig('results/training_summaries/learn_curves_after_{}_epochs'.format(total_epochs))
