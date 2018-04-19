@@ -164,7 +164,7 @@ def main(train_set, learning_rate, n_epochs, batch_size, num_workers, hidden_siz
                     print("Checkpoint saved!")
 
                     #  sample images for inspection
-                    save_image_sample(batch=gen.forward(fixed_noise.view(-1, hidden_size, 1, 1)),
+                    save_image_sample(batch=gen.forward(fixed_noise),  # .view(-1, hidden_size, 1, 1)
                                       cuda=cuda, total_examples=total_examples, directory=gen_images_dir)
                     print("Saved images!")
 
@@ -196,7 +196,7 @@ def main(train_set, learning_rate, n_epochs, batch_size, num_workers, hidden_siz
         print("Checkpoint saved!")
 
         # sample images for inspection
-        save_image_sample(batch=gen.forward(fixed_noise.view(-1, hidden_size, 1, 1)),
+        save_image_sample(batch=gen.forward(fixed_noise),  # .view(-1, hidden_size, 1, 1)
                           cuda=cuda, total_examples=total_examples, directory=gen_images_dir)
         print("Saved images!")
 
