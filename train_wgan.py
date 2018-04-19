@@ -136,7 +136,8 @@ def main(train_set, learning_rate, n_epochs, batch_size, num_workers, hidden_siz
                         z = Variable(torch.rand(batch_size, hidden_size))
 
                     # train generator
-                    fake_batch = gen.forward(z.view(-1, hidden_size, 1, 1))
+                    # fake_batch = gen.forward(z.view(-1, hidden_size, 1, 1))
+                    fake_batch = gen.forward(z)
                     fake_disc_output = disc.forward(fake_batch)
 
                     # Optimize generator
