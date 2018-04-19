@@ -12,7 +12,7 @@ import torch
 class Generator(nn.Module):
     # Network Architecture is exactly same as in infoGAN (https://arxiv.org/abs/1606.03657)
     # Architecture : FC1024_BR-FC7x7x128_BR-(64)4dc2s_BR-(1)4dc2s_S
-    def __init__(self, hidden_dim):
+    def __init__(self, hidden_dim, leaky=0.2):
         super(Generator, self).__init__()
         self.input_height = 64
         self.input_width = 64
@@ -50,7 +50,7 @@ class Generator(nn.Module):
 class Discriminator(nn.Module):
     # Network Architecture is exactly same as in infoGAN (https://arxiv.org/abs/1606.03657)
     # Architecture : (64)4c2s-(128)4c2s_BL-FC1024_BL-FC1_S
-    def __init__(self, dataset = 'mnist'):
+    def __init__(self, leaky=0.2):
         super(Discriminator, self).__init__()
         self.input_height = 64
         self.input_width = 64
@@ -69,7 +69,7 @@ class Discriminator(nn.Module):
             nn.BatchNorm1d(1024),
             nn.LeakyReLU(0.2),
             nn.Linear(1024, self.output_dim),
-            nn.Sigmoid(),
+            nn.Tanh(),
         )
 
     def forward(self, input):
