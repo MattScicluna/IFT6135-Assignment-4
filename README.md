@@ -8,6 +8,25 @@ Directory structure
     ├── utils
     |   └── process_imgs.py
     ├── models
+    |   └── model.py
+    |   └── model_nn.py
+    |   └── model_bilinear.py
+    |   ├── transpose
+    |   ├── nn
+    |   ├── bilinear
+    ├── results
+    |   ├── generated_images
+	|   |   ├── transpose
+	|   |   ├── nn
+	|   |   ├── bilinear
+    |   ├── training_summaries
+    |   |   ├── transpose
+	|   |   ├── nn
+	|   |   ├── bilinear
+
+
+
+    
 
 
 Download the data by running
