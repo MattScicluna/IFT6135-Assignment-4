@@ -76,7 +76,7 @@ def load_model(model_file, hidden_size, upsampling, cuda=False):
     fixed_noise = from_before['fixed_noise']
     epoch = from_before['epoch']
 
-    # load generator and discriminatort
+    # load generator and discriminator
     if upsampling == 'transpose':
         from models.model import Generator, Discriminator
     elif upsampling == 'nn':
@@ -89,7 +89,7 @@ def load_model(model_file, hidden_size, upsampling, cuda=False):
     disc.load_state_dict(disc_state_dict)
     gen.load_state_dict(gen_state_dict)
     return total_examples, fixed_noise, gen_losses, disc_losses, \
-           gen_loss_per_epoch, disc_loss_per_epoch, eopch, gen, disc
+           gen_loss_per_epoch, disc_loss_per_epoch, epoch, gen, disc
 
 
 def save_learning_curve(gen_losses, disc_losses, total_examples):
