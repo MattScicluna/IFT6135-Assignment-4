@@ -93,6 +93,32 @@ def load_model(model_file, hidden_size, upsampling, cuda=False):
            gen_loss_per_epoch, disc_loss_per_epoch, epoch, gen, disc
 
 
+def load_model_wgan(model_file, hidden_size, cuda=False):
+    if cuda:
+        from_before = torch.load(model_file)
+    else:
+        from_before = torch.load(model_file, map_location=lambda storage, loc: storage)
+    total_examples = from_before['total_examples']
+    gen_losses = from_before['gen_losses']
+    disc_losses = from_before['disc_losses']
+    gen_loss_per_epoch = from_before['gen_loss_per_epoch']
+    disc_loss_per_epoch = from_before['disc_loss_per_epoch']
+    gen_state_dict = from_before['gen_state_dict']
+    disc_state_dict = from_before['disc_state_dict']
+    fixed_noise = from_before['fixed_noise']
+    epoch = from_before['epoch']
+
+    # load generator and discriminator
+    from models.model_wgan import Generator, Discriminator
+
+    gen = Generator(hidden_dim=hidden_size, leaky=0.2)   # TODO: save dropout in checkpoint
+    disc = Discriminator(leaky=0.2)           # TODO: same here
+    disc.load_state_dict(disc_state_dict)
+    gen.load_state_dict(gen_state_dict)
+    return total_examples, fixed_noise, gen_losses, disc_losses, \
+           gen_loss_per_epoch, disc_loss_per_epoch, epoch, gen, disc
+
+
 def save_learning_curve(gen_losses, disc_losses, total_examples, directory):
     plt.figure()
     #plt.title('GAN Learning Curves')

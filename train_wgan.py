@@ -12,7 +12,7 @@ import numpy as np
 from models.model_wgan import Generator, Discriminator, wgan_Dloss, wgan_Gloss
 
 # from project
-from helpers import load_model, save_checkpoint, save_image_sample, save_learning_curve, save_learning_curve_epoch
+from helpers import load_model_wgan, save_checkpoint, save_image_sample, save_learning_curve, save_learning_curve_epoch
 
 
 def main(train_set, learning_rate, n_epochs, batch_size, num_workers, hidden_size, model_file,
@@ -33,7 +33,7 @@ def main(train_set, learning_rate, n_epochs, batch_size, num_workers, hidden_siz
     if model_file:
         try:
             total_examples, fixed_noise, gen_losses, disc_losses, gen_loss_per_epoch, \
-            disc_loss_per_epoch, gen, disc = load_model(model_file, hidden_size)  # TODO: upsampling method?
+            disc_loss_per_epoch, gen, disc = load_model_wgan(model_file, hidden_size)  # TODO: upsampling method?
             print('model loaded successfully!')
 
         except:
