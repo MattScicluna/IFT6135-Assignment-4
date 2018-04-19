@@ -36,6 +36,9 @@ def main(train_set, learning_rate, n_epochs, batch_size, num_workers, hidden_siz
             disc_loss_per_epoch, prev_epoch, gen, disc = load_model_wgan(model_file, hidden_size)  # TODO: upsampling method?
             print('model loaded successfully!')
 
+            if cuda:
+                fixed_noise = Variable(fixed_noise.cuda())
+
         except:
             print('could not load model! creating new model...')
             model_file = None
