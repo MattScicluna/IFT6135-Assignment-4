@@ -187,6 +187,8 @@ def main(train_set, learning_rate, n_epochs, batch_size, num_workers, hidden_siz
     except KeyboardInterrupt:
         print("Saving before quit...")
         save_checkpoint(total_examples=total_examples, fixed_noise=fixed_noise, disc=disc, gen=gen,
+                        disc_loss_per_epoch=disc_loss_per_epoch,
+                        gen_loss_per_epoch=gen_loss_per_epoch,
                         gen_losses=gen_losses, disc_losses=disc_losses, epoch=epoch, directory=checkpoint_dir)
         print("Checkpoint saved!")
 
