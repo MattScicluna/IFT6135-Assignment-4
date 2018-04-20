@@ -44,27 +44,25 @@ def latent_space_vars(batch, directory, indices, alterations, model_name='GAN'):
                                                         std=[1., 1., 1.]),
                                    transforms.ToPILImage()
                                    ])
-
-    f, axarr = plt.subplots(nrows=len(indices), ncols=len(alterations))
+    f, axarr = plt.subplots(nrows=len(indices), ncols=len(alterations), figsize=(12, 7))
     indx = 0
     for i in range(len(indices)):
         for j in range(len(alterations)):
-            axarr[i, j].imshow(invTrans(batch[indx].data.cpu()))
+            axarr[i, j].imshow(invTrans(batch[indx].data))
             indx += 1
 
             # Turn off tick labels
             axarr[i, j].axis('off')
             if alterations[j] > 0:
-                axarr[i, j].set_title(r'$z_{0}$ $\leftarrow$ $z_{0}$ + {1}'
-                                      .format(indices[i], int(abs(alterations[j]))), fontsize=8)
+                axarr[i, j].set_title(r'$z_{{\rm{0}}}$ $\leftarrow$ $z_{{\rm{0}}}$ + ${1}$'
+                                      .format(indices[i], abs(alterations[j])), fontsize=10)
             elif alterations[j] < 0:
-                axarr[i, j].set_title(r'$z_{0}$ $\leftarrow$ $z_{0}$ - {1}'
-                                      .format(indices[i], int(abs(alterations[j]))), fontsize=8)
+                axarr[i, j].set_title(r'$z_{{\rm{0}}}$ $\leftarrow$ $z_{{\rm{0}}}$ - ${1}$'
+                                      .format(indices[i], abs(alterations[j])), fontsize=10)
             elif alterations[j] == 0:
-                axarr[i, j].set_title('Original', fontsize=8)
-        axarr[i, 0].set_ylabel('i = ' + str(indices[i]), rotation=0, fontsize=16)
+                axarr[i, j].set_title('Original ', fontsize=12)
     f.tight_layout()
-    plt.subplots_adjust(wspace=0.25, hspace=0.25)
+    plt.subplots_adjust(wspace=0.30, hspace=0.30)
     f.savefig(directory + '/latent_gen_images_{}_model'.format(model_name))
 
 
@@ -173,3 +171,26 @@ def save_learning_curve_epoch(gen_losses, disc_losses, total_epochs, directory):
     plt.ylabel('Loss')
     plt.legend(loc='upper right')
     plt.savefig(directory+'/learn_curves_after_{}_epochs'.format(total_epochs))
+
+
+def save_interpolation_sample(batch, alphas, directory, model_name='GAN'):
+    invTrans = transforms.Compose([transforms.Normalize(mean=[0., 0., 0.],
+                                                        std=[1 / 0.5, 1 / 0.5, 1 / 0.5]),
+                                   transforms.Normalize(mean=[-0.5, -0.5, -0.5],
+                                                        std=[1., 1., 1.]),
+                                   transforms.ToPILImage()
+                                   ])
+
+    f, axarr = plt.subplots(nrows=1, ncols=len(alphas), figsize=(12, 3))
+    indx = 0
+    for j in range(len(alphas)):
+        axarr[j].imshow(invTrans(batch[indx].data))
+        indx += 1
+
+        # Turn off tick labels
+        axarr[j].axis('off')
+        axarr[j].set_title(r'$\alpha = {0}$'.format(alphas[j]), fontsize=12)
+
+    f.tight_layout()
+    plt.subplots_adjust(wspace=0.25, hspace=0.25)
+    f.savefig(directory + '/latent_gen_images_{}_model'.format(model_name))

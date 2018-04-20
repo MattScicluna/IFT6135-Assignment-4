@@ -5,8 +5,8 @@ from helpers import save_image_sample
 import os
 
 
-gan_model_file = 'results/checkpoints/example-3936000.model'  # Vanilla model
-wgan_model_file = 'results/wgan_checkpoints/example-1536000.model'  # WGAN model
+gan_model_file = 'results/checkpoints/example-2208000.model'  # Vanilla model
+wgan_model_file = 'results/wgan_checkpoints/example-6112000.model'  # WGAN model
 hidden_size = 100
 
 # results save folder
