@@ -16,9 +16,10 @@ def inception_score(generator, nsamples=50000, batch_size=128, splits=10, resize
     """
     Compute Inception Score given by \exp(\mathbb{E}_x [KL(p(y|x) || p(y)])
     Args:
-        generated_imgs - dataset of generated images by G. Should be in the range [-1, 1].
-        splits - number of splits to average the results.
+        generator - (hopefully) trained GAN generator.
+        nsamples - Number of samples to evaluate the IS on.
         batch_size - batch size for the generated images Dataloader.
+        splits - number of splits to average the results.
         resize - True if images are smaller than 299x299.
         cuda - True if want to use GPU.
     """
@@ -72,7 +73,7 @@ if __name__ == '__main__':
     argparser = argparse.ArgumentParser()
     argparser.add_argument('--model', type=str, help="'nn', 'transpose', 'bilinear' or 'wgan' ")
     argparser.add_argument('--splits', type=int, default=10, help='Number of splits to compute the IS on.')
-    argparser.add_argument('--nsamples', type=int, default=50000, help='Number of samples to evaluate the IS on')
+    argparser.add_argument('--nsamples', type=int, default=50000, help='Number of samples to evaluate the IS on.')
     argparser.add_argument('--batch_size', type=int, default=128)
     argparser.add_argument('--hidden_size', type=int, default=100, help='Size of the random vector.')
     argparser.add_argument('--cuda', action='store_true', default=False)
