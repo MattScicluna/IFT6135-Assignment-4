@@ -74,7 +74,7 @@ def inception_score(generator, nsamples=50000, batch_size=128, splits=10, resize
 def mode_score(generator, train_set, nsamples_fake=50000, nsamples_real=50000,
                batch_size=128, splits=10, resize=False, cuda=True):
     """
-    Compute Mode Score, given by \exp(\mathbb{E}_x [KL(p(y|x) || p(y) - KL(p(y) || p(y*)])
+    Compute Mode Score, given by \exp(\mathbb{E}_x [KL(p(y|x) || p(y)] - KL(p(y) || p(y*))
     where p(y*) = \int_x p(y|x) dP_{real}
     Args:
         generator - (hopefully) trained GAN generator.
