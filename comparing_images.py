@@ -17,7 +17,7 @@ if not os.path.isdir(gen_images_dir):
     os.mkdir(gen_images_dir)
 
 # Fixed to see how both models react
-fixed_noise = Variable(torch.rand(9, hidden_size))
+fixed_noise = Variable(torch.rand(16, hidden_size))
 
 # WGAN model
 from_before = torch.load(wgan_model_file, map_location=lambda storage, loc: storage)

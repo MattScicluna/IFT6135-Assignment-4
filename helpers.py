@@ -31,6 +31,7 @@ def save_image_sample(batch, cuda, total_examples, directory, model_name=None):
             axarr[i, j].axis('off')
 
     f.tight_layout()
+    plt.subplots_adjust(wspace=0.10, hspace=0.10)
     if model_name is None:
         f.savefig(directory+'/gen_images_after_{}_examples'.format(total_examples))
     else:
@@ -181,7 +182,7 @@ def save_interpolation_sample(batch, alphas, directory, model_name='GAN'):
                                    transforms.ToPILImage()
                                    ])
 
-    f, axarr = plt.subplots(nrows=1, ncols=len(alphas), figsize=(12, 3))
+    f, axarr = plt.subplots(nrows=1, ncols=len(alphas), figsize=(14, 2))
     indx = 0
     for j in range(len(alphas)):
         axarr[j].imshow(invTrans(batch[indx].data))
