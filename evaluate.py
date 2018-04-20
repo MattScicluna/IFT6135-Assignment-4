@@ -3,7 +3,6 @@ import sys
 import torch
 from torch.autograd import Variable
 from torch.nn import functional as F
-from torch.utils.data import DataLoader
 from torchvision.models.inception import inception_v3
 import numpy as np
 from tqdm import *
@@ -29,8 +28,6 @@ def inception_score(generator, nsamples=50000, batch_size=128, splits=10, resize
     else:
         dtype = torch.FloatTensor
 
-    #num_imgs = len(generated_imgs)
-    #inception_predictions = np.zeros((num_imgs, 1000))
     inception_predictions = np.zeros((nsamples, 1000))
 
     # Load pretrained Inception model
