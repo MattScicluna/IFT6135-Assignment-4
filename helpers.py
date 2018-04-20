@@ -8,7 +8,7 @@ import numpy as np
 from models.model import Generator, Discriminator  # TODO: other upsampling methods?
 
 
-def save_image_sample(batch, cuda, total_examples, directory):
+def save_image_sample(batch, cuda, total_examples, directory, model_name=None):
     invTrans = transforms.Compose([transforms.Normalize(mean=[0., 0., 0.],
                                                         std=[1 / 0.5, 1 / 0.5, 1 / 0.5]),
                                    transforms.Normalize(mean=[-0.5, -0.5, -0.5],
@@ -31,7 +31,41 @@ def save_image_sample(batch, cuda, total_examples, directory):
             axarr[i, j].axis('off')
 
     f.tight_layout()
-    f.savefig(directory+'/gen_images_after_{}_examples'.format(total_examples))
+    if model_name is None:
+        f.savefig(directory+'/gen_images_after_{}_examples'.format(total_examples))
+    else:
+        f.savefig(directory + '/gen_images_{}_model'.format(model_name))
+
+
+def latent_space_vars(batch, directory, indices, alterations, model_name='GAN'):
+    invTrans = transforms.Compose([transforms.Normalize(mean=[0., 0., 0.],
+                                                        std=[1 / 0.5, 1 / 0.5, 1 / 0.5]),
+                                   transforms.Normalize(mean=[-0.5, -0.5, -0.5],
+                                                        std=[1., 1., 1.]),
+                                   transforms.ToPILImage()
+                                   ])
+
+    f, axarr = plt.subplots(nrows=len(indices), ncols=len(alterations))
+    indx = 0
+    for i in range(len(indices)):
+        for j in range(len(alterations)):
+            axarr[i, j].imshow(invTrans(batch[indx].data.cpu()))
+            indx += 1
+
+            # Turn off tick labels
+            axarr[i, j].axis('off')
+            if alterations[j] > 0:
+                axarr[i, j].set_title(r'$z_{0}$ $\leftarrow$ $z_{0}$ + {1}'
+                                      .format(indices[i], int(abs(alterations[j]))), fontsize=8)
+            elif alterations[j] < 0:
+                axarr[i, j].set_title(r'$z_{0}$ $\leftarrow$ $z_{0}$ - {1}'
+                                      .format(indices[i], int(abs(alterations[j]))), fontsize=8)
+            elif alterations[j] == 0:
+                axarr[i, j].set_title('Original', fontsize=8)
+        axarr[i, 0].set_ylabel('i = ' + str(indices[i]), rotation=0, fontsize=16)
+    f.tight_layout()
+    plt.subplots_adjust(wspace=0.25, hspace=0.25)
+    f.savefig(directory + '/latent_gen_images_{}_model'.format(model_name))
 
 
 def save_checkpoint(total_examples, disc, gen, gen_losses, disc_losses,
