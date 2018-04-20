@@ -131,7 +131,7 @@ def mode_score(generator, train_set, nsamples_fake=50000, nsamples_real=50000,
 
         real_predictions[idx * batch_size: idx * batch_size + batch_size_] = predict(x_var)
 
-    # Compute the average KL, i.e. E_x[KL(p(y|x) || p(y))] and exponentiate it
+    # Compute the average KL, i.e. E_x[KL(p(y|x) || p(y))] 
     score_per_split = []
 
     for s in range(splits):
