@@ -100,6 +100,8 @@ def mode_score(generator, train_set, nsamples_fake=50000, nsamples_real=50000,
 
     train_dataset = datasets.ImageFolder(root=os.path.join(os.getcwd(), train_set),
                                          transform=data_transform)
+    train_dataset.imgs = train_dataset.imgs[:nsamples_real]
+
     # Dataloader of real images
     dataloader_real = DataLoader(train_dataset, batch_size=batch_size)
 
@@ -119,13 +121,13 @@ def mode_score(generator, train_set, nsamples_fake=50000, nsamples_real=50000,
         # Generate random vectors to feed the generator
         z = Variable(torch.randn(args.batch_size, args.hidden_size).type(dtype))
         generated_imgs = generator(z)
-
         generated_imgs = generated_imgs.type(dtype)
+
         fake_predictions[idx * batch_size: idx * batch_size + batch_size] = predict(generated_imgs)
 
     # Compute p(y|x) using samples from the real data
-    for idx, x in tqdm(enumerate(dataloader_real)):
-        x = x.type(dtype)
+    for idx, x in tqdm(enumerate(dataloader_real, 0)):
+        x = x[0].type(dtype)
         x_var = Variable(x)
         batch_size_ = x.size()[0]
 
@@ -133,20 +135,17 @@ def mode_score(generator, train_set, nsamples_fake=50000, nsamples_real=50000,
 
     # Compute the average KL, i.e. E_x[KL(p(y|x) || p(y))] and KL(p(y) || p(y*))
     score_per_split = []
-
     for s in range(splits):
         split_scores = []
-        split_preds_fake = fake_predictions[s * (nsamples_fake // splits): (s + 1) * (nsamples_fake // splits), :]
+        split_preds_fake = fake_predictions[s * (nsamples_fake // splits): (s + 1) * (nsamples_fake // splits), :] #empty
         split_preds_real = real_predictions[s * (nsamples_fake // splits): (s + 1) * (nsamples_fake // splits), :]
-
-        split_py_fake = np.mean(split_preds_fake, axis=0)   # p(y)
-        split_py_real = np.mean(split_preds_real, axis=0)   # p(y*)
+        split_py_fake = np.mean(split_preds_fake, axis=0)   # p(y)  #nan
+        split_py_real = np.mean(split_preds_real, axis=0)   # p(y*) #nan
 
         for i in range(split_preds_fake.shape[0]):
             p_y_given_xi_fake = split_preds_fake[i, :]
             split_scores.append(entropy(p_y_given_xi_fake, split_py_fake))
         score_per_split.append(np.exp(np.mean(split_scores) - entropy(split_py_fake, split_py_real)))
-
     # Return the mean over the splits
     return np.mean(score_per_split), np.std(score_per_split)
 
@@ -157,6 +156,7 @@ if __name__ == '__main__':
     argparser.add_argument('--score', type=str, default='inception', help="'inception', 'mode' or 'both'")
     argparser.add_argument('--splits', type=int, default=10, help='Number of splits to compute the IS on.')
     argparser.add_argument('--nsamples', type=int, default=50000, help='Number of samples to evaluate the IS on.')
+    argparser.add_argument('--nsamples_real', type=int, default=50000)
     argparser.add_argument('--batch_size', type=int, default=128)
     argparser.add_argument('--hidden_size', type=int, default=100, help='Size of the random vector.')
     argparser.add_argument('--train_set', type=str, default='data/resized_celebA')
@@ -190,7 +190,7 @@ if __name__ == '__main__':
     # Inception Score
     if args.score == 'mode' or args.score == 'both':
         print('Computing Mode Score...')
-        mean, std = mode_score(G, args.train_set, args.nsamples, 50000,
+        mean, std = mode_score(G, args.train_set, args.nsamples, args.nsamples_real,
                                args.batch_size, args.splits, resize=True, cuda=cuda)
         print('Mode Score = {} +- {}'.format(mean, std))
         np.savetxt('results/evaluation/modeScore_{}.txt'.format(args.model),
