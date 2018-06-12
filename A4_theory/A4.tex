@@ -1,0 +1,239 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Short Sectioned Assignment
+% LaTeX Template
+% Version 1.0 (5/5/12)
+%
+% This template has been downloaded from:
+% http://www.LaTeXTemplates.com
+%
+% Original author:
+% Frits Wenneker (http://www.howtotex.com)
+%
+% License:
+% CC BY-NC-SA 3.0 (http://creativecommons.org/licenses/by-nc-sa/3.0/)
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%----------------------------------------------------------------------------------------
+%	PACKAGES AND OTHER DOCUMENT CONFIGURATIONS
+%----------------------------------------------------------------------------------------
+
+\documentclass[paper=a4, fontsize=11pt]{scrartcl} % A4 paper and 11pt font size 
+
+\usepackage[T1]{fontenc} % Use 8-bit encoding that has 256 glyphs
+\usepackage[english]{babel} % English language/hyphenation
+\usepackage{amsmath,amsfonts,amsthm} % Math packages
+
+\usepackage{sectsty} % Allows customizing section commands
+%\allsectionsfont{\centering \normalfont\scshape} % Make all sections centered, the default font and small caps
+
+\usepackage{fancyhdr} % Custom headers and footers
+\pagestyle{fancyplain} % Makes all pages in the document conform to the custom headers and footers
+\fancyhead{} % No page header - if you want one, create it in the same way as the footers below
+\fancyfoot[L]{} % Empty left footer
+\fancyfoot[C]{} % Empty center footer
+\fancyfoot[R]{\thepage} % Page numbering for right footer
+\renewcommand{\headrulewidth}{0pt} % Remove header underlines
+\renewcommand{\footrulewidth}{0pt} % Remove footer underlines
+\setlength{\headheight}{13.6pt} % Customize the height of the header
+
+\numberwithin{equation}{section} % Number equations within sections (i.e. 1.1, 1.2, 2.1, 2.2 instead of 1, 2, 3, 4)
+\numberwithin{figure}{section} % Number figures within sections (i.e. 1.1, 1.2, 2.1, 2.2 instead of 1, 2, 3, 4)
+\numberwithin{table}{section} % Number tables within sections (i.e. 1.1, 1.2, 2.1, 2.2 instead of 1, 2, 3, 4)
+
+\setlength\parindent{0pt} % Removes all indentation from paragraphs - comment this line for an assignment with lots of text
+
+\usepackage{bbm}
+\usepackage{graphicx}
+\usepackage{xcolor} % For color
+\usepackage{subcaption}
+\usepackage{booktabs}
+
+\usepackage{tikz} % For graphs
+\usetikzlibrary{positioning}
+\usetikzlibrary{calc}
+
+\usepackage{enumerate} % For lettered enumeration
+
+\usepackage{algorithm}
+%\usepackage{algorithmic}
+\usepackage[noend]{algpseudocode} % for pseudocode
+
+% commands
+\newcommand{\Ex}[2]{\mathbb{E}_{#1}\left\{#2\right\}}
+\newcommand{\dP}[2]{\frac{\partial #1}{\partial #2}}
+\newcommand{\Var}[1]{Var\left\{#1\right\}}
+\newcommand{\Ll}[1]{\mathcal{L}\left(#1\right)}
+\newcommand{\KL}[2]{KL\left(#1 || #2\right)}
+
+%----------------------------------------------------------------------------------------
+%	TITLE SECTION
+%----------------------------------------------------------------------------------------
+
+\newcommand{\horrule}[1]{\rule{\linewidth}{#1}} % Create horizontal rule command with 1 argument of height
+
+\title{	
+\normalfont \normalsize 
+\horrule{0.5pt} \\[0.4cm] % Thin top horizontal rule
+\huge Assignment Four \\ % The assignment title
+\horrule{2pt} \\[0.5cm] % Thick bottom horizontal rule
+}
+
+\author{
+	Matthew C.~Scicluna\\
+	D\'epartement d'Informatique et de Recherche Op\'erationnelle\\
+	Universit\'e de Montr\'eal\\
+	Montr\'eal, QC H3T 1J4 \\
+	\texttt{matthew.scicluna@umontreal.ca}
+}
+
+
+\date{\normalsize\today} % Today's date or a custom date
+
+\begin{document}
+
+\maketitle % Print the title
+
+%----------------------------------------------------------------------------------------
+%	PROBLEM 1
+%----------------------------------------------------------------------------------------
+
+\section{Reparameterization Trick of Variational Autoencoder}
+
+Consider a generative model that factorizes as follows $p(x, z) = p(x | z)p(z)$, with $p(x | z) = p(x| h_{\theta}(z))$ mapped through a neural net and $\theta$
+being the set of parameters for the generative network (i.e. decoder), a simple distribution parameterized by $h(\cdot)$. In the case of Gaussian, $h_{\theta}(z)$ refers to the mean and variance, per dimension as it is fully factorized in the common setting. We have $z\in\mathbb{R}^K$, and $p(z) = \mathcal{N}(0, I_K)$. The framework of auto-encoding variational Bayes considers maximizing the variational lower bound on the log-likelihood $\Ll{\theta, \phi} \le \log p(x)$, which is expressed as:
+$$ \Ll{\theta, \phi} =  \Ex{q_{\phi}}{\log p(x|z)} - \KL{q_{\phi}}{p_{\theta}(z)}$$
+where $\phi$ is the set of parameters used for the inference network (i.e. encoder). The reparameterization trick used in the original work rewrites the random variable in the variational distribution as:
+$$ z = \mu(x) + \sigma(x)\odot\epsilon $$
+where $\epsilon\sim\mathcal{N}(0,I)$
+\begin{enumerate}[(a)]
+	\item We show that the linearly transformed standard Gaussian noise has the same mean and variance as $\mathcal{N}(z; \mu(x), \sigma^2(x))$. This can be easily seen since:
+	\begin{align*}
+	\Ex{\epsilon}{z} &= \Ex{\epsilon}{\mu(x) + \sigma(x)\odot\epsilon}\\
+	&= \Ex{\epsilon}{\mu(x)} + \Ex{\epsilon}{\sigma(x)\odot\epsilon}\\
+	&= \mu(x) + \sigma(x)\odot\underbrace{\Ex{\epsilon}{\epsilon}}_{=0}\\
+	&= \mu(x)
+	\end{align*}
+	\begin{align*}
+	\Var{z} &= \Var{\mu(x) + \sigma(x)\odot\epsilon}\\
+	&= \Var{\sigma(x)\odot\epsilon}\\
+	&= \sigma(x)^2\odot\underbrace{\Var{\epsilon}}_{=I}\\
+	&= I\sigma(x)^2
+	\end{align*}
+	
+	If we write $z = \mu(x) + S(x)\epsilon$, where $S(x) \in \mathbb{R}^{K \times K}$, the new distribution this reparameterization induces is $\mathcal{N}(z; \mu(x), S(x)S(x)^T)$. This can be computed since:
+		\begin{align*}
+		\Ex{\epsilon}{z} &= \Ex{\epsilon}{\mu(x) + S(x)\epsilon}\\
+		&= \Ex{\epsilon}{\mu(x)} + \Ex{\epsilon}{S(x)\epsilon}\\
+		&= \mu(x) + S(x)\underbrace{\Ex{\epsilon}{\epsilon}}_{=0}\\
+		&= \mu(x)
+		\end{align*}
+		\begin{align*}
+		\Var{z} &= \Var{\mu(x) + S(x)\epsilon}\\
+		&= \Var{S(x)\epsilon}\\
+		&= S(x)\Var{\epsilon}S(x)^T\\
+		&= S(x)S(x)^T
+		\end{align*}
+		
+	\item If the traditional mean field variational method is used, i.e. if we factorize the variational distribution as a product of distributions: $q^{mf}(z_i) = \prod_{j} \mathcal{N}(z_{i,j} | m_{i,j} , \sigma_{i,j} )$ for each $x_i$, and we maximize the lower bound with respect to the variational parameters and model parameters iteratively, the inference network used in the variational autoencoder $q_{\phi}$ will not outperform the mean field method on the training set. This is because the model will learn, for each datapoint, the optimal mean and variance parameters for its reconstruction. Wheras with the encoder network, the mean and variance parameters will not necessarily be optimal for any particular datapoint, but will be for the training set as a whole. The advantage of using an encoder as in VAE is efficiency, the inference doesn't grow linearly with the data as it would with the traditional mean field variational method.
+\end{enumerate}
+
+\section{Importance Weighted Autoencoder}
+When training a variational autoencoder, the standard training objective is to maximize the evidence lower bound (ELBO). Here we consider another lower bound, called the Importance Weighted Lower Bound (IWLB), a tighter bound than ELBO, defined as
+$$\mathcal{L}_k = \Ex{z_{1:k}\sim q(z|x)}{\log \frac{1}{k} \sum_{j=1}^k \frac{p(x,z_j)}{q(z_j|x)}} $$
+
+for an observed variable $x$ and a latent variable $z$, $k$ being the number of importance samples. The model we are considering has joint that factorizes as $p(z, x) = p(x | z)p(z)$, $x$ and $z$ being the observed and latent variables, respectively.
+
+\begin{enumerate}[(a)]
+	\item We show that IWLB is a lower bound on the log likelihood $\log p(x)$. We first use Jensens inequality and the concavity of $\log$, and marginalize to get the desired result:
+	\begin{align*}
+	\mathcal{L}_k &= \Ex{z_{1:k}\sim q(z|x)}{\log \frac{1}{k} \sum_{j=1}^k \frac{p(x,z_j)}{q(z_j|x)}} \\
+	&\le  \log \Ex{z_{1:k}\sim q(z|x)}{ \frac{1}{k} \sum_{j=1}^k \frac{p(x,z_j)}{q(z_j|x)}}\\
+	&= \log \frac{1}{k} \sum_{j=1}^k \Ex{z_{j}\sim q(z|x)}{  \frac{p(x,z_j)}{q(z_j|x)}}\\
+	&= \log \frac{1}{k} \sum_{j=1}^k \int_{z_{j}}q(z_j|x)  \frac{p(x,z_j)}{q(z_j|x)}dz_j\\
+	&= \log \frac{1}{k} \sum_{j=1}^k \int_{z_{j}} p(x,z_j)dz_j\\
+	&= \log \frac{1}{k} \sum_{j=1}^k p(x) \\
+	&= \log p(x)
+	\end{align*}
+	
+	\item Given $k = 2$, we prove that $\mathcal{L}_2$ is a tighter bound than the ELBO (with $k = 1$). It is enough to show that $\mathcal{L}_2 \ge$ ELBO (since both are $\le \log p(x)$). We show this using an argument similar to Burda et al (2016) \cite{DBLP:journals/corr/BurdaGS15}	. First notice that $\mathcal{L}_1$ is equivalent to the ELBO, which is clear when we write the ELBO in the following form:
+	$$ELBO = \Ex{z\sim q(z|x)}{\log \frac{p(x,z)}{q(z|x)}}$$
+	From this, it is enough to show that $\mathcal{L}_2 \ge \mathcal{L}_1$. Notice that:
+	\begin{align*}
+	\mathcal{L}_2 &= \Ex{z_{1},z_2\sim q(z|x)}{\log \frac{1}{2}\left( \frac{p(x,z_1)}{q(z_1|x)} + \frac{p(x,z_2)}{q(z_2|x)}\right)}\\
+	&\overset{(a)}{=} \Ex{z_{1},z_2\sim q(z|x)}{\log \Ex{i\sim Unif(\{1,2\})}{\frac{p(x,z_i)}{q(z_i|x)}}}\\
+	&\overset{(b)}{\ge} \Ex{z_{1},z_2\sim q(z|x)}{\Ex{i\sim Unif(\{1,2\})}{\log\frac{p(x,z_i)}{q(z_i|x)}}}\\
+	&= \Ex{z_{1}\sim q(z_1|x)}{\log\frac{p(x,z_1)}{q(z_1|x)}}
+	\end{align*}
+	Where (a) follows since $p(i=1)=p(i=2)=\frac{1}{2}$ for $i\sim Unif(\{1,2\})$ and viewing $\frac{p(x,z_i)}{q(z_i|x)}$ as a function of $i$. (b) follows from Jensens inequality.
+\end{enumerate}
+
+\section{Maximum Likelihood for Generative Adversarial Networks}
+
+The original GAN objective is the following:
+\begin{align*}
+&\max_{D} \Ex{x\sim p_{data}}{\log D(x)} + \Ex{z\sim p_z}{\log(1-D(G(z)))}\\
+&\max_{G} \Ex{z\sim p_z}{\log D(G(z))} 
+\end{align*}
+This generator objective can be generalized by replacing the log with a general function $f$:
+\begin{align*}
+\max_{G} \Ex{z\sim p_z}{f(D(G(z)))}
+\end{align*}
+We find a function $f$ such that the objective corresponds to maximum likelihood, assuming the discriminator is optimal, i.e. that:
+\begin{align*}
+D(x)=\frac{p_{data}(x)}{p_{data}(x)+p_{gen}(x)}
+\end{align*}
+Where $p_{gen}$ is the probability distribution of generated samples $G(z), \ z\sim p_z$. Following an appoach similar to Goodfellow (2014) \cite{2014arXiv1412.6515G}, we claim that the following $f$ satisfies the condition:
+\begin{align*}
+f(D(G(z))) = \exp( \sigma^{-1}(D(G(z))) )
+\end{align*}
+Where $\sigma$ is the logistic sigmoid (supposing that $D$ applies $\sigma$ at its topmost layer). We show the equivalence by showing that the gradients for Maximum Likelihood are the same in expectation as those for GANs under the aforementioned conditions. The derivative of the log likelihood is:
+\begin{align*}
+\dP{}{\theta}\sum_{i=1}^N\log p_{gen}(x_i) = \Ex{x\sim p_{data}}{\dP{}{\theta}\log p_{gen}(x)}
+\end{align*}
+\newpage
+The derivative of the generator objective with the chosen $f$ is:
+\begin{align*}
+\dP{}{\theta}\Ex{x\sim p_{gen}}{f(x)}  &= \dP{}{\theta}\int_{x}f(x) p_{gen}(x)dx\\
+&\overset{(a)}{=} \int_{x}f(x) \dP{}{\theta}p_{gen}(x)dx\\
+&\overset{(b)}{=} \int_{x}f(x) \dP{}{\theta}\exp(\log(p_{gen}(x)))dx\\
+&= \int_{x}f(x) \exp(\log(p_{gen}(x)))\dP{}{\theta}\log(p_{gen}(x))dx\\
+&= \int_{x}f(x) \dP{}{\theta}\log(p_{gen}(x))p_{gen}(x)dx\\
+&= \Ex{x\sim p_{gen}}{f(x) \dP{}{\theta}\log p_{gen}(x)}
+\end{align*}
+Where (a) follows from Leibnitz's rule if we assume that $p_{gen}$ and its derivative are continuous and (b) follows if we assume that $p_{gen}(x) \ge 0$ everywhere. If we set $f(x)=\frac{p_{data}(x)}{p_{gen}(x)}$ we see that:
+\begin{align*}
+\Ex{x\sim p_{gen}}{f(x) \dP{}{\theta}\log p_{gen}(x)} &= \Ex{x\sim p_{data}}{\dP{}{\theta}\log p_{gen}(x)}
+\end{align*}
+Note that $p_{gen}$ found in $f$ is a copy of the actual $p_{gen}$ -- this is to ensure that $\dP{}{\theta}f = 0$ in the above equations. If we assume an optimal discriminator, we can get the importance sampling ratio above from $D$:
+\begin{align*}
+D(x) &= \frac{p_{data}(x)}{p_{data}(x)+p_{gen}(x)} = \sigma(a(x))\\
+&\Rightarrow a(x) = \log\frac{p_{data}(x)}{p_{gen}(x)}
+\end{align*}
+We show how our definition of $f$ from before is equivalent to the importance sampling ratio needed to make the gradients equal:
+\begin{align*}
+f(D(x)) &= \exp( \sigma^{-1}(D(x)) ) \\
+&= \exp( a(x) ) \\
+&= \exp\log\frac{p_{data}(x)}{p_{gen}(x)}\\
+&= \frac{p_{data}(x)}{p_{gen}(x)}
+\end{align*}
+
+%$$ f(x) = \frac{D(x)}{1-D(x)}\log\frac{D(x)}{1-D(x)} $$
+%it is enough to show that the expectation of $f$ under $p(z)$ is %$KL(p_{data}||p_{gen})$. We can see this since:
+%\begin{align*}
+%\Ex{p(z)}{f(D(G(z)))} &= \Ex{x\sim p_{gen}}{\frac{D(x)}{1-D(x)}\log\frac{D(x)}{1-D(x)}}
+%\end{align*}
+%We use that the optimal discriminator $D(x)=\frac{p_{data}(x)}{p_{data}(x)+p_{gen}(x)}$
+%\begin{align*}
+%&= \int_x %p_{gen}(x)\frac{p_{data}(x)}{p_{gen}(x)}\log\frac{p_{data}(x)}{p_{gen}(x)}dx\\
+%&= \int_x p_{data}(x)\log\frac{p_{data}(x)}{p_{gen}(x)}dx\\
+%&= KL(p_{data}||p_{gen})
+%\end{align*}
+
+\newpage
+
+\bibliographystyle{ieeetr}
+\bibliography{A4.bib}
+
+
+\end{document}

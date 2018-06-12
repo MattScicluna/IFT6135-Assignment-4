@@ -102,6 +102,6 @@ ENV/
 .idea/
 
 data/
-A4_theory/
-models/
-results/
+#A4_theory/
+#models/
+#results/

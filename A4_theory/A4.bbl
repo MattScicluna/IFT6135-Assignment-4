@@ -1,0 +1,11 @@
+\begin{thebibliography}{1}
+
+\bibitem{DBLP:journals/corr/BurdaGS15}
+Y.~Burda, R.~B. Grosse, and R.~Salakhutdinov, ``Importance weighted
+  autoencoders,'' {\em CoRR}, vol.~abs/1509.00519, 2015.
+
+\bibitem{2014arXiv1412.6515G}
+I.~J. {Goodfellow}, ``{On distinguishability criteria for estimating generative
+  models},'' {\em ArXiv e-prints}, Dec. 2014.
+
+\end{thebibliography}
